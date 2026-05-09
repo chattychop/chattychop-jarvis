@@ -124,14 +124,16 @@ async function loadData(){
 
     // Table
     const visits = data.filter(r=>r.type!=='unknown').reverse();
-    document.getElementById('tbody').innerHTML = visits.slice(0,50).map((r,i) =>
-      `<tr><td>${visits.length-i}</td><td>${r.time||'—'}</td><td>${r.country||'—'}</td><td>${r.city||'—'}</td><td>${r.device||'—'}</td><td>${r.browser||'—'}</td><td>${r.source||'—'}</td><td>${r.tabsused||'—'}</td><td>${r.timespent||'0'}s</td></tr>`
-    ).join('') || '<tr><td colspan="9" style="color:rgba(255,255,255,.3);text-align:center">No visits yet</td></tr>';
+    document.getElementById('tbody').innerHTML = visits.slice(0,50).map((r,i) => {
+      const tabs = (r.tabsused||'').split(',').map(t=>t.trim()).filter(Boolean)
+        .map(t=>`<span style="background:rgba(0,245,255,.15);border:1px solid rgba(0,245,255,.3);padding:.1rem .3rem;font-size:.5rem;color:#00f5ff">${t}</span>`).join(' ') || '—';
+      return `<tr><td>${visits.length-i}</td><td>${r.time||'—'}</td><td>${r.country||'—'}</td><td>${r.city||'—'}</td><td>${r.device||'—'}</td><td>${r.browser||'—'}</td><td>${r.source||'—'}</td><td>${tabs}</td><td>${r.timespent||'0'}s</td></tr>`;
+    }).join('') || '<tr><td colspan="9" style="color:rgba(255,255,255,.3);text-align:center">No visits yet</td></tr>';
 
     // Unknown questions
-    const questions = data.filter(r=>r.type==='unknown'||r.question).reverse();
+    const questions = data.filter(r=>r.type==='unknown'||(r.question&&r.question.length>0)).reverse();
     document.getElementById('qtbody').innerHTML = questions.slice(0,30).map(r =>
-      `<tr><td>${r.time||'—'}</td><td style="color:#ffcc00">${r.question||'—'}</td></tr>`
+      `<tr><td style="color:rgba(255,255,255,.5);white-space:nowrap">${r.time||'—'}</td><td style="color:#ffcc00">${r.question||'—'}</td></tr>`
     ).join('') || '<tr><td colspan="2" style="color:rgba(255,255,255,.3);text-align:center">No unknown questions yet</td></tr>';
 
   } catch(e) {
