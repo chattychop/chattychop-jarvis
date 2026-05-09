@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS CAM v5</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+:root{--c:#00f5ff;--b:#0044cc;--bg:#000810;--glass:rgba(0,245,255,0.07);--gb:rgba(0,245,255,0.22)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--c);font-family:'Share Tech Mono',monospace;overflow:hidden;height:100vh;width:100vw}
+#landing{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;background:#000408;overflow:hidden}
+#lc{position:absolute;inset:0}
+.lcon{position:relative;z-index:2;text-align:center}
+.logo{font-family:'Orbitron',monospace;font-size:clamp(2.8rem,8vw,7.5rem);font-weight:900;letter-spacing:.18em;background:linear-gradient(135deg,#ffffff 0%,var(--c) 45%,#0080ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 60px var(--c));animation:lp 3s ease-in-out infinite}
+@keyframes lp{0%,100%{filter:drop-shadow(0 0 40px var(--c)) drop-shadow(0 0 80px rgba(0,245,255,.3))}50%{filter:drop-shadow(0 0 120px var(--c)) drop-shadow(0 0 200px rgba(0,100,255,.4))}}
+.lsub{font-size:.72rem;letter-spacing:.6em;color:rgba(0,245,255,.5);margin-top:.6rem;text-transform:uppercase;animation:fadeIn 2s ease}
+.lver{font-size:.58rem;letter-spacing:.3em;color:rgba(0,245,255,.25);margin-top:.3rem}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lbar{width:160px;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);margin:.9rem auto;animation:scanW 3s ease-in-out infinite}
+@keyframes scanW{0%,100%{width:60px;opacity:.4}50%{width:200px;opacity:1}}
+.cards{display:flex;gap:1.6rem;margin-top:2.2rem;flex-wrap:wrap;justify-content:center}
+.card{position:relative;border:1px solid var(--gb);background:var(--glass);backdrop-filter:blur(16px);padding:1.8rem 2.2rem;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);min-width:180px;text-align:center;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,.06),transparent);opacity:0;transition:opacity .3s}
+.card::after{content:'';position:absolute;bottom:0;left:-100%;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);transition:left .5s}
+.card:hover::before{opacity:1}
+.card:hover::after{left:100%}
+.card:hover{background:rgba(0,245,255,.12);border-color:var(--c);transform:translateY(-8px) scale(1.03);box-shadow:0 0 40px rgba(0,245,255,.3),inset 0 0 20px rgba(0,245,255,.05)}
+.card .ico{font-size:2.4rem;margin-bottom:.5rem;filter:drop-shadow(0 0 10px rgba(0,245,255,.5))}
+.card .cn{font-family:'Orbitron',monospace;font-size:.72rem;letter-spacing:.22em;color:#fff}
+.card .cd{font-size:.6rem;color:rgba(0,245,255,.45);margin-top:.3rem;line-height:1.5}
+.card .ctag{font-size:.5rem;color:rgba(0,245,255,.25);letter-spacing:.3em;margin-top:.5rem;text-transform:uppercase}
+.lhex{position:absolute;width:60px;height:60px;border:1px solid rgba(0,245,255,.08);transform:rotate(30deg);animation:hexFloat linear infinite;pointer-events:none}
+@keyframes hexFloat{0%{transform:rotate(30deg) translateY(0) scale(1)}50%{transform:rotate(30deg) translateY(-12px) scale(1.05)}100%{transform:rotate(30deg) translateY(0) scale(1)}}
+.lstatus{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:.55rem;letter-spacing:.35em;color:rgba(0,245,255,.3);white-space:nowrap;animation:blink 2s infinite}
+.lring{position:absolute;border-radius:50%;border:1px solid rgba(0,245,255,.07);top:50%;left:50%;transform:translate(-50%,-50%);animation:ringPulse ease-in-out infinite;pointer-events:none}
+@keyframes ringPulse{0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(1)}50%{opacity:.7;transform:translate(-50%,-50%) scale(1.02)}}
+#app{display:none;flex-direction:column;height:100vh}
+.nav{display:flex;align-items:center;padding:.45rem 1.2rem;background:rgba(0,4,12,.98);border-bottom:1px solid var(--gb);flex-shrink:0;gap:.25rem}
+.nlogo{font-family:'Orbitron',monospace;font-size:.88rem;font-weight:900;color:var(--c);letter-spacing:.15em;margin-right:1.5rem;filter:drop-shadow(0 0 8px var(--c))}
+.ntab{padding:.3rem 1rem;background:transparent;border:1px solid transparent;color:rgba(0,245,255,.35);font-family:'Share Tech Mono',monospace;font-size:.67rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+.ntab:hover,.ntab.active{background:rgba(0,245,255,.1);border-color:var(--c);color:#fff}
+.nstat{margin-left:auto;font-size:.58rem;color:rgba(0,245,255,.45);white-space:nowrap}
+.sdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;margin-right:5px;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.content{flex:1;position:relative;overflow:hidden}
+.panel{display:none;position:absolute;inset:0}
+.panel.active{display:block}
+
+/* ── SKETCH ── */
+#sk-wrap{position:relative;width:100%;height:100%;background:#000408;overflow:hidden}
+#sk-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:1}
+#sk-draw{position:absolute;inset:0;width:100%;height:100%}
+#sk-cur{position:absolute;width:22px;height:22px;border-radius:50%;border:2.5px solid #00f5ff;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:10;transition:border-color .1s}
+#sk-cur::after{content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;border-radius:50%;background:#00f5ff;transform:translate(-50%,-50%)}
+.sk-hint{position:absolute;top:1rem;left:1rem;font-size:.6rem;color:rgba(0,245,255,.55);line-height:2.1;pointer-events:none;background:rgba(0,4,12,.6);padding:.5rem .8rem;border-left:2px solid var(--c)}
+#sk-stat{position:absolute;top:1rem;right:1rem;font-size:.67rem;color:var(--c);text-align:right;line-height:2;background:rgba(0,4,12,.7);padding:.4rem .7rem;border:1px solid rgba(0,245,255,.2)}
+#sk-bar{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);display:flex;gap:.6rem;align-items:center;background:rgba(0,4,12,.92);border:1px solid var(--gb);padding:.55rem 1rem;backdrop-filter:blur(12px);white-space:nowrap}
+.cdot{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0}
+.cdot.sel,.cdot:hover{border-color:#fff;transform:scale(1.25)}
+.sbtn{background:transparent;border:1px solid var(--gb);color:var(--c);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:.28rem .65rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.sbtn:hover{background:rgba(0,245,255,.12);border-color:var(--c)}
+
+/* ── FACE ── */
+#fc-wrap{position:relative;width:100%;height:100%;background:#000;overflow:hidden}
+#fc-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:1}
+#fc-cv{position:absolute;inset:0;width:100%;height:100%}
+.fc-hint{position:absolute;top:1rem;left:1rem;font-size:.6rem;color:rgba(0,245,255,.55);line-height:2.1;pointer-events:none;background:rgba(0,4,12,.6);padding:.5rem .8rem;border-left:2px solid var(--c)}
+#fc-style{position:absolute;top:1rem;right:1rem;font-family:'Orbitron',monospace;font-size:.67rem;color:var(--c);letter-spacing:.15em;background:rgba(0,4,12,.7);padding:.4rem .8rem;border:1px solid rgba(0,245,255,.2)}
+#fc-bar{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);display:flex;gap:.6rem;background:rgba(0,4,12,.9);border:1px solid var(--gb);padding:.55rem 1rem;backdrop-filter:blur(12px)}
+.fbtn{background:transparent;border:1px solid var(--gb);color:var(--c);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:.28rem .65rem;cursor:pointer;transition:all .2s}
+.fbtn:hover{background:rgba(0,245,255,.12);border-color:var(--c)}
+#fc-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Orbitron',monospace;font-size:.9rem;color:rgba(0,245,255,.7);letter-spacing:.2em;pointer-events:none;text-shadow:0 0 20px var(--c)}
+
+/* ── GLOBE ── */
+#gl-wrap{position:relative;width:100%;height:100%;overflow:hidden;background:#000408}
+#gl-cv{position:absolute;inset:0;width:100%;height:100%}
+#gl-cam{position:absolute;bottom:1.2rem;right:1.2rem;width:155px;height:115px;border:1px solid var(--gb);overflow:hidden;background:#000}
+#gl-vid{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0.8}
+#gl-ov{position:absolute;top:0;left:0;width:155px;height:115px}
+#gl-info{position:absolute;top:1rem;left:1rem;font-size:.6rem;color:rgba(0,245,255,.55);line-height:2.2;background:rgba(0,4,12,.6);padding:.5rem .8rem;border-left:2px solid var(--c)}
+#gl-stat{position:absolute;top:1rem;right:1rem;font-size:.65rem;color:var(--c);text-align:right;line-height:2;background:rgba(0,4,12,.7);padding:.4rem .7rem;border:1px solid rgba(0,245,255,.2)}
+#gl-loc{position:absolute;bottom:1.2rem;left:1.2rem;font-size:.67rem;color:var(--c);background:rgba(0,4,12,.95);border:1px solid var(--gb);padding:.5rem 1rem;line-height:1.9;display:none;max-width:280px}
+#gl-vfb{position:absolute;top:1rem;left:50%;transform:translateX(-50%);font-family:'Orbitron',monospace;font-size:.75rem;color:#fff;background:rgba(0,4,12,.97);border:2px solid var(--c);padding:.55rem 1.4rem;display:none;letter-spacing:.08em;white-space:normal;text-align:center;text-shadow:0 0 12px var(--c);box-shadow:0 0 22px rgba(0,245,255,.32);z-index:50;max-width:72vw;line-height:1.65}
+#gl-edu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.68rem;color:var(--c);background:rgba(0,4,12,.98);border:1px solid var(--c);padding:1rem 1.4rem;line-height:1.85;display:none;max-width:480px;width:90vw;max-height:75vh;overflow-y:auto;text-align:left;box-shadow:0 0 30px rgba(0,245,255,.2);z-index:60}
+#gl-edu .edu-title{font-family:'Orbitron',monospace;font-size:.9rem;color:#fff;margin-bottom:.5rem;letter-spacing:.2em}
+#gl-edu .edu-close{cursor:pointer;color:rgba(0,245,255,.5);font-size:.6rem;margin-top:.5rem;display:block}
+.hring{position:absolute;border-radius:50%;border:1px solid rgba(0,245,255,.22);top:50%;left:50%;animation:rs linear infinite}
+@keyframes rs{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+#gl-holo{position:absolute;inset:0;pointer-events:none;display:none;background:radial-gradient(ellipse at center,rgba(0,245,255,.04) 0%,transparent 70%)}
+/* Unknown Q log */
+#gl-log{position:absolute;bottom:1.4rem;left:50%;transform:translateX(-50%);font-size:.58rem;color:rgba(0,245,255,.7);background:rgba(0,4,12,.97);border:1px solid rgba(255,80,80,.5);padding:.55rem 1rem;max-width:58vw;max-height:140px;overflow-y:auto;display:none;line-height:1.9;z-index:40;backdrop-filter:blur(8px)}
+#gl-log .log-title{font-family:'Orbitron',monospace;font-size:.55rem;color:#ff5555;letter-spacing:.2em;margin-bottom:.25rem;display:flex;align-items:center;gap:.4rem}
+.log-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ff5555;animation:blink 1.2s infinite}
+#gl-log .log-item{color:rgba(255,190,190,.85);border-bottom:1px solid rgba(255,80,80,.12);padding:.08rem 0;display:flex;justify-content:space-between}
+#gl-log .log-item .log-time{color:rgba(0,245,255,.3);font-size:.5rem;margin-left:.5rem;white-space:nowrap}
+#gl-holo.on{display:block}
+
+/* CORNERS */
+.deco{position:absolute;width:16px;height:16px;pointer-events:none}
+.deco.tl{top:8px;left:8px;border-top:2px solid var(--c);border-left:2px solid var(--c)}
+.deco.tr{top:8px;right:8px;border-top:2px solid var(--c);border-right:2px solid var(--c)}
+.deco.bl{bottom:8px;left:8px;border-bottom:2px solid var(--c);border-left:2px solid var(--c)}
+.deco.br{bottom:8px;right:8px;border-bottom:2px solid var(--c);border-right:2px solid var(--c)}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,245,255,.007) 2px,rgba(0,245,255,.007) 4px);pointer-events:none;z-index:9999}
+/* Unknown Q log */
+#gl-log{position:absolute;bottom:1.4rem;left:50%;transform:translateX(-50%);font-size:.57rem;color:rgba(0,245,255,.7);background:rgba(0,4,12,.97);border:1px solid rgba(255,80,80,.5);padding:.55rem 1rem;min-width:280px;max-width:60vw;max-height:150px;overflow-y:auto;display:none;line-height:1.85;z-index:40;backdrop-filter:blur(8px)}
+#gl-log .log-title{font-family:'Orbitron',monospace;font-size:.52rem;color:#ff5555;letter-spacing:.18em;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.log-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ff5555;flex-shrink:0;animation:blink 1.2s infinite}
+.log-item{color:rgba(255,185,185,.85);border-bottom:1px solid rgba(255,80,80,.12);padding:.06rem 0;display:flex;justify-content:space-between;align-items:center}
+.log-time{color:rgba(0,245,255,.3);font-size:.5rem;margin-left:.5rem;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <canvas id="lc"></canvas>
+  <!-- Pulse rings -->
+  <div class="lring" style="width:400px;height:400px;animation-duration:6s"></div>
+  <div class="lring" style="width:650px;height:650px;animation-duration:9s;animation-delay:-3s"></div>
+  <div class="lring" style="width:900px;height:900px;animation-duration:13s"></div>
+  <!-- Floating hexagons -->
+  <div class="lhex" style="top:12%;left:8%;width:40px;height:40px;animation-duration:7s"></div>
+  <div class="lhex" style="top:20%;right:10%;width:28px;height:28px;animation-duration:5s;animation-delay:-2s"></div>
+  <div class="lhex" style="bottom:18%;left:12%;width:50px;height:50px;animation-duration:9s;animation-delay:-4s"></div>
+  <div class="lhex" style="bottom:25%;right:8%;width:35px;height:35px;animation-duration:6s;animation-delay:-1s"></div>
+  <div class="lcon">
+    <div class="logo">JARVIS CAM</div>
+    <div class="lsub">AI · AR · GESTURE · VOICE · EDU</div>
+    <div class="lver">VERSION 9.0 — HYDERABAD EDITION</div>
+    <div class="lbar"></div>
+    <div class="cards">
+      <div class="card" onclick="launch(0)">
+        <div class="ico">✏️</div>
+        <div class="cn">AIR SKETCH</div>
+        <div class="cd">Draw in thin air with<br>your index finger</div>
+        <div class="ctag">● GESTURE CONTROL</div>
+      </div>
+      <div class="card" onclick="launch(1)">
+        <div class="ico">🎭</div>
+        <div class="cn">FACE MESH</div>
+        <div class="cd">AR grid on your face —<br>open mouth to inflate</div>
+        <div class="ctag">● FACE TRACKING</div>
+      </div>
+      <div class="card" onclick="launch(2)">
+        <div class="ico">🌍</div>
+        <div class="cn">3D GLOBE</div>
+        <div class="cd">Explore Earth · Ask anything<br>"Jarvis, how many people in India?"</div>
+        <div class="ctag">● VOICE + GESTURE</div>
+      </div>
+    </div>
+  </div>
+  <div class="lstatus">INITIALIZING NEURAL INTERFACE — TAP TO BEGIN</div>
+  <div style="position:absolute;width:20px;height:20px;top:12px;left:12px;border-top:2px solid var(--c);border-left:2px solid var(--c)"></div>
+  <div style="position:absolute;width:20px;height:20px;top:12px;right:12px;border-top:2px solid var(--c);border-right:2px solid var(--c)"></div>
+  <div style="position:absolute;width:20px;height:20px;bottom:12px;left:12px;border-bottom:2px solid var(--c);border-left:2px solid var(--c)"></div>
+  <div style="position:absolute;width:20px;height:20px;bottom:12px;right:12px;border-bottom:2px solid var(--c);border-right:2px solid var(--c)"></div>
+</div>
+
+<div id="app">
+  <nav class="nav">
+    <div class="nlogo">JARVIS CAM</div>
+    <button class="ntab" onclick="switchTab(0)">✏️ AIR SKETCH</button>
+    <button class="ntab" onclick="switchTab(1)">🎭 FACE MESH</button>
+    <button class="ntab" onclick="switchTab(2)">🌍 3D GLOBE</button>
+    <div class="nstat"><span class="sdot"></span>SYSTEM ONLINE</div>
+  </nav>
+  <div class="content">
+
+    <!-- SKETCH TAB -->
+    <div class="panel" id="p0">
+      <div id="sk-wrap">
+        <video id="sk-vid" autoplay playsinline muted></video>
+        <canvas id="sk-draw"></canvas>
+        <div id="sk-cur"></div>
+        <div class="sk-hint">☝️ INDEX ONLY → DRAW<br>✊ FIST → LIFT PEN<br>🖐️ FULL PALM → CLEAR<br>🤌 PINCH → CYCLE COLOR</div>
+        <div id="sk-stat">MODE: —<br>PEN: UP<br>COLOR: CYAN</div>
+        <div id="sk-bar">
+          <div class="cdot sel" style="background:#00f5ff" onclick="setPenColor('#00f5ff',0,this)"></div>
+          <div class="cdot" style="background:#ff2255" onclick="setPenColor('#ff2255',1,this)"></div>
+          <div class="cdot" style="background:#00ff88" onclick="setPenColor('#00ff88',2,this)"></div>
+          <div class="cdot" style="background:#ffcc00" onclick="setPenColor('#ffcc00',3,this)"></div>
+          <div class="cdot" style="background:#bb44ff" onclick="setPenColor('#bb44ff',4,this)"></div>
+          <div class="cdot" style="background:#ffffff" onclick="setPenColor('#ffffff',5,this)"></div>
+          <button class="sbtn" onclick="clearDraw()">CLEAR</button>
+          <button class="sbtn" onclick="saveDraw()">SAVE</button>
+        </div>
+        <div class="deco tl"></div><div class="deco tr"></div><div class="deco bl"></div><div class="deco br"></div>
+      </div>
+    </div>
+
+    <!-- FACE TAB -->
+    <div class="panel" id="p1">
+      <div id="fc-wrap">
+        <video id="fc-vid" autoplay playsinline muted></video>
+        <canvas id="fc-cv"></canvas>
+        <div class="fc-hint">😮 OPEN MOUTH → INFLATE BALLOON<br>😉 RIGHT WINK → CHANGE STYLE<br>📸 LEFT WINK → SCREENSHOT<br>6 GRID COLOUR STYLES</div>
+        <div id="fc-style">STYLE: CYAN GRID</div>
+        <div id="fc-msg">LOOKING FOR FACE...</div>
+        <div id="fc-bar">
+          <button class="fbtn" onclick="cycleFaceStyle()">NEXT STYLE</button>
+          <button class="fbtn" onclick="faceScreenshot()">SCREENSHOT</button>
+        </div>
+        <div class="deco tl"></div><div class="deco tr"></div><div class="deco bl"></div><div class="deco br"></div>
+      </div>
+    </div>
+
+    <!-- GLOBE TAB -->
+    <div class="panel" id="p2">
+      <div id="gl-wrap">
+        <canvas id="gl-cv"></canvas>
+        <div id="gl-holo">
+          <div class="hring" style="width:270px;height:270px;animation-duration:8s"></div>
+          <div class="hring" style="width:420px;height:420px;animation-duration:14s;animation-direction:reverse"></div>
+          <div class="hring" style="width:570px;height:570px;animation-duration:22s"></div>
+        </div>
+        <div id="gl-info">🖐️ PALM LEFT/RIGHT → SPIN<br>🖐️ PALM UP/DOWN → TILT<br>🤌 PINCH SPREAD → ZOOM<br>✊ FIST HOLD 2s → EXPLODE<br>🗣️ "JARVIS [COUNTRY]" → FLY THERE<br>🗣️ "JARVIS EXPLODE / HOLD / ZOOM IN"</div>
+        <div id="gl-stat">GESTURE: —<br>ZOOM: 1.0×<br>MODE: GLOBE</div>
+        <div id="gl-loc"></div>
+        <div id="gl-vfb"></div>
+        <div id="gl-edu"><div class="edu-title" id="gl-edu-title">INDIA</div><div id="gl-edu-body">Loading...</div><span class="edu-close" onclick="closeEdu()">[ CLOSE ]</span></div>
+        <div id="gl-log"><div class="log-title"><span class="log-dot"></span>UNKNOWN QUESTIONS LOG</div><div id="gl-log-body"></div></div>
+        <div id="gl-cam">
+          <video id="gl-vid" autoplay playsinline muted></video>
+          <canvas id="gl-ov"></canvas>
+        </div>
+        <div class="deco tl"></div><div class="deco tr"></div><div class="deco bl"></div><div class="deco br"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+'use strict';
+
+// ═══ LANDING PARTICLES ═══
+(()=>{
+  const cv=document.getElementById('lc'),ctx=cv.getContext('2d');
+  let W,H,pts=[];
+  const resize=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};
+  addEventListener('resize',resize);resize();
+  for(let i=0;i<130;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*1.8+.4,bright:Math.random()});
+  let mx=W/2,my=H/2,mPressed=false;
+  addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+  addEventListener('mousedown',()=>mPressed=true);addEventListener('mouseup',()=>mPressed=false);
+  addEventListener('touchmove',e=>{mx=e.touches[0].clientX;my=e.touches[0].clientY},{passive:true});
+
+  // Pulse rings from center
+  const rings=[];
+  setInterval(()=>{rings.push({r:0,a:0.6})},2200);
+
+  const loop=()=>{
+    requestAnimationFrame(loop);
+    ctx.fillStyle='rgba(0,4,8,0.18)';ctx.fillRect(0,0,W,H);
+
+    // Draw rings
+    for(let i=rings.length-1;i>=0;i--){
+      const rg=rings[i];rg.r+=2.2;rg.a-=0.008;
+      if(rg.a<=0){rings.splice(i,1);continue}
+      ctx.beginPath();ctx.arc(W/2,H/2,rg.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(0,245,255,${rg.a.toFixed(3)})`;ctx.lineWidth=1;ctx.stroke();
+    }
+
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);
+      const repel=mPressed?140:90;
+      if(d<repel){const f=mPressed?2.2:1.4;p.x+=dx/d*f;p.y+=dy/d*f}
+      // Twinkle
+      p.bright=0.3+Math.abs(Math.sin(Date.now()*0.001+p.x*0.01))*0.7;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,245,255,${(p.bright*.7).toFixed(2)})`;ctx.fill();
+    });
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
+      if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=`rgba(0,245,255,${((1-d/100)*.22).toFixed(2)})`;ctx.lineWidth=.6;ctx.stroke()}
+    }
+    // Mouse glow
+    const mg=ctx.createRadialGradient(mx,my,0,mx,my,120);
+    mg.addColorStop(0,'rgba(0,245,255,0.06)');mg.addColorStop(1,'rgba(0,245,255,0)');
+    ctx.fillStyle=mg;ctx.beginPath();ctx.arc(mx,my,120,0,Math.PI*2);ctx.fill();
+  };loop();
+})();
+
+// ═══ GLOBALS ═══
+let currentTab=-1;
+const initialized={0:false,1:false,2:false};
+
+async function getCam(el){
+  const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'user'}});
+  el.srcObject=s;
+  await new Promise(r=>{el.onloadedmetadata=r});
+  el.play();return s;
+}
+function launch(t){document.getElementById('landing').style.display='none';document.getElementById('app').style.display='flex';switchTab(t)}
+function switchTab(t){
+  currentTab=t;
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===t));
+  document.querySelectorAll('.ntab').forEach((b,i)=>b.classList.toggle('active',i===t));
+  if(!initialized[t]){initialized[t]=true;[initSketch,initFace,initGlobe][t]()}
+}
+function makeSmoother(alpha){let v=null;return x=>{v=v===null?x:v+(x-v)*alpha;return v}}
+
+// ═══════════════════════════════════════════════════════
+//  TAB 0 — AIR SKETCH (fixed)
+// ═══════════════════════════════════════════════════════
+let skCtx,skCanvas,skVideo;
+const penColors=['#00f5ff','#ff2255','#00ff88','#ffcc00','#bb44ff','#ffffff'];
+const penNames=['CYAN','RED','GREEN','YELLOW','PURPLE','WHITE'];
+let penColorIdx=0;
+let penColor=penColors[0];
+let penDown=false;
+let lastX=null,lastY=null;
+// Strong smoother — reduces shake significantly (lower = smoother but more lag)
+const skSX=makeSmoother(0.18),skSY=makeSmoother(0.18);
+// Deadzone: minimum movement before drawing (px) — kills tiny jitter
+const SK_DEADZONE=2.5;
+// Cooldowns
+let pinchCd=0,clearCd=0,pinchWasActive=false,colorJustChanged=false;
+// Confidence buffer for gesture
+let drawFrames=0,fistFrames=0,palmFrames=0;
+
+function setPenColor(c,idx,el){
+  penColor=c;penColorIdx=idx;
+  document.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  updateSkStat('COLOR PICK','UP');
+}
+function clearDraw(){if(skCtx)skCtx.clearRect(0,0,skCanvas.width,skCanvas.height)}
+function saveDraw(){
+  // composite: video + drawing
+  const tmp=document.createElement('canvas');tmp.width=skCanvas.width;tmp.height=skCanvas.height;
+  const t=tmp.getContext('2d');
+  t.save();t.scale(-1,1);t.translate(-skCanvas.width,0);
+  t.drawImage(skVideo,0,0,skCanvas.width,skCanvas.height);t.restore();
+  t.drawImage(skCanvas,0,0);
+  const a=document.createElement('a');a.download='jarvis-sketch.png';a.href=tmp.toDataURL();a.click();
+}
+function updateSkStat(mode,pen){
+  document.getElementById('sk-stat').innerHTML=`MODE: ${mode}<br>PEN: ${pen}<br>COLOR: ${penNames[penColorIdx]}`;
+}
+
+async function initSketch(){
+  skVideo=document.getElementById('sk-vid');
+  skCanvas=document.getElementById('sk-draw');
+  skCtx=skCanvas.getContext('2d');
+  const cur=document.getElementById('sk-cur');
+
+  const resize=()=>{skCanvas.width=skCanvas.offsetWidth;skCanvas.height=skCanvas.offsetHeight};
+  new ResizeObserver(resize).observe(skCanvas);resize();
+
+  await getCam(skVideo);
+
+  const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+  hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.8,minTrackingConfidence:0.75});
+
+  hands.onResults(res=>{
+    if(currentTab!==0)return;
+    const W=skCanvas.width,H=skCanvas.height;
+
+    if(!res.multiHandLandmarks||!res.multiHandLandmarks.length){
+      penDown=false;lastX=null;lastY=null;cur.style.display='none';
+      drawFrames=0;fistFrames=0;palmFrames=0;
+      updateSkStat('NO HAND','UP');return;
+    }
+    const lm=res.multiHandLandmarks[0];
+
+    // Mirror X properly
+    const rawX=(1-lm[8].x)*W;
+    const rawY=lm[8].y*H;
+    const sx=skSX(rawX),sy=skSY(rawY);
+
+    cur.style.display='block';
+    cur.style.left=sx+'px';cur.style.top=sy+'px';
+    cur.style.borderColor=penColor;
+    cur.style.setProperty('background','transparent');
+
+    // Finger extension check: tip y < pip y (index=8,6 mid=12,10 ring=16,14 pinky=20,18)
+    // Also compare with MCP (knuckle) for better accuracy
+    const tipAbovePip=i=>lm[i].y<lm[i-2].y;
+    const tipAboveMcp=i=>lm[i].y<lm[i-3].y;
+
+    const idxExt=tipAbovePip(8)&&tipAboveMcp(8);
+    const midExt=tipAbovePip(12);
+    const rngExt=tipAbovePip(16);
+    const pnkExt=tipAbovePip(20);
+
+    // Thumb-index pinch distance (normalized)
+    const pd=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+    const pinching=pd<0.06;
+
+    // Gestures (require several frames to avoid flicker)
+    const rawFist=!idxExt&&!midExt&&!rngExt&&!pnkExt;
+    const rawPalm=idxExt&&midExt&&rngExt&&pnkExt&&!pinching;
+    // Draw: ONLY index up, middle/ring/pinky folded
+    const rawDraw=idxExt&&!midExt&&!rngExt&&!pnkExt&&!pinching;
+
+    if(rawFist)fistFrames=Math.min(fistFrames+1,8);else fistFrames=Math.max(fistFrames-2,0);
+    if(rawPalm)palmFrames=Math.min(palmFrames+1,8);else palmFrames=Math.max(palmFrames-2,0);
+    if(rawDraw)drawFrames=Math.min(drawFrames+1,5);else drawFrames=Math.max(drawFrames-2,0);
+
+    const isFist=fistFrames>=5;
+    const isPalm=palmFrames>=6;
+    const isDraw=drawFrames>=4;
+
+    if(pinchCd>0)pinchCd--;
+    if(clearCd>0)clearCd--;
+
+    // Pinch: change color ONLY on pinch START (not hold) - require thumb+index close, other fingers folded
+    const cleanPinch=pd<0.055&&!midExt&&!rngExt;
+    if(cleanPinch&&!pinchWasActive&&pinchCd===0){
+      penColorIdx=(penColorIdx+1)%penColors.length;
+      penColor=penColors[penColorIdx];
+      document.querySelectorAll('.cdot').forEach((d,i)=>d.classList.toggle('sel',i===penColorIdx));
+      pinchCd=55;penDown=false;lastX=null;lastY=null;colorJustChanged=true;
+      updateSkStat('COLOR','UP');
+    }
+    if(!cleanPinch)colorJustChanged=false;
+    pinchWasActive=cleanPinch;
+
+    // Palm = clear
+    if(isPalm&&clearCd===0){
+      clearDraw();clearCd=50;penDown=false;lastX=null;lastY=null;
+      updateSkStat('CLEAR','UP');return;
+    }
+
+    // Fist = lift pen (highest priority over draw)
+    if(isFist){
+      penDown=false;lastX=null;lastY=null;
+      updateSkStat('FIST','UP');return;
+    }
+
+    // Draw
+    if(isDraw&&!pinching&&!colorJustChanged){
+      if(lastX!==null&&penDown){
+        const dx=sx-lastX,dy=sy-lastY;
+        // Only draw if movement > deadzone — prevents jitter dots
+        if(Math.hypot(dx,dy)>SK_DEADZONE){
+          skCtx.beginPath();skCtx.moveTo(lastX,lastY);skCtx.lineTo(sx,sy);
+          skCtx.strokeStyle=penColor;skCtx.lineWidth=4.5;
+          skCtx.lineCap='round';skCtx.lineJoin='round';skCtx.stroke();
+          lastX=sx;lastY=sy;
+        }
+      } else {
+        lastX=sx;lastY=sy;
+      }
+      penDown=true;
+      // Show filled dot at cursor when drawing
+      cur.style.background=penColor+'44';
+      updateSkStat('DRAW','DOWN');
+    } else {
+      penDown=false;lastX=null;lastY=null;
+      cur.style.background='transparent';
+      updateSkStat('IDLE','UP');
+    }
+  });
+
+  const cam=new Camera(skVideo,{onFrame:async()=>{if(currentTab===0)await hands.send({image:skVideo})},width:1280,height:720});
+  cam.start();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TAB 1 — FACE MESH (Iron Man / Avengers Masks)
+// ═══════════════════════════════════════════════════════
+let fcCtx,fcCanvas,fcVideo;
+let faceStyleIdx=0;
+const faceStyles=['CYAN GRID','NEON GREEN','PLASMA PURPLE','GOLD WIRE','GHOST WHITE','INFRARED'];
+let lastFaceLM=null;
+let rightWinkCd=0,leftWinkCd=0;
+// Wink detection buffers
+let rightWinkFrames=0,leftWinkFrames=0;
+
+function cycleFaceStyle(){
+  faceStyleIdx=(faceStyleIdx+1)%faceStyles.length;
+  document.getElementById('fc-style').textContent='STYLE: '+faceStyles[faceStyleIdx];
+}
+function faceScreenshot(){
+  const tmp=document.createElement('canvas');
+  tmp.width=fcCanvas.width;tmp.height=fcCanvas.height;
+  const t=tmp.getContext('2d');
+  t.save();t.scale(-1,1);t.translate(-fcCanvas.width,0);
+  t.drawImage(fcVideo,0,0,fcCanvas.width,fcCanvas.height);t.restore();
+  t.drawImage(fcCanvas,0,0);
+  const a=document.createElement('a');a.download='jarvis-face.png';a.href=tmp.toDataURL();a.click();
+}
+
+async function initFace(){
+  fcVideo=document.getElementById('fc-vid');
+  fcCanvas=document.getElementById('fc-cv');
+  fcCtx=fcCanvas.getContext('2d');
+
+  const resize=()=>{fcCanvas.width=fcCanvas.offsetWidth;fcCanvas.height=fcCanvas.offsetHeight};
+  new ResizeObserver(resize).observe(fcCanvas);resize();
+
+  await getCam(fcVideo);
+
+  const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+  fm.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+
+  fm.onResults(res=>{
+    if(currentTab!==1)return;
+    const W=fcCanvas.width,H=fcCanvas.height;
+    fcCtx.clearRect(0,0,W,H);
+
+    const msg=document.getElementById('fc-msg');
+
+    if(!res.multiFaceLandmarks||!res.multiFaceLandmarks.length){
+      msg.style.display='block';
+      // NO dark overlay — keep camera fully visible
+      return;
+    }
+    msg.style.display='none';
+    const lm=res.multiFaceLandmarks[0];
+    lastFaceLM=lm;
+
+    // Mirror X to match video
+    const pt=i=>({x:(1-lm[i].x)*W,y:lm[i].y*H,z:lm[i].z});
+
+    // ── Wink detection (right eye = lm 159/145, left eye = lm 386/374) ──
+    // Right eye: landmarks 159 (upper) and 145 (lower)
+    const rEyeOpen=Math.abs(pt(159).y-pt(145).y);
+    const lEyeOpen=Math.abs(pt(386).y-pt(374).y);
+    const avgEye=(rEyeOpen+lEyeOpen)/2;
+    const threshold=avgEye*0.35;
+
+    // Right wink: right eye closed, left open
+    const rightWink=rEyeOpen<threshold&&lEyeOpen>threshold*2;
+    // Left wink: left eye closed, right open
+    const leftWink=lEyeOpen<threshold&&rEyeOpen>threshold*2;
+
+    if(rightWinkCd>0)rightWinkCd--;
+    if(leftWinkCd>0)leftWinkCd--;
+
+    if(rightWink){
+      rightWinkFrames=Math.min(rightWinkFrames+1,6);
+    } else {
+      if(rightWinkFrames>=4&&rightWinkCd===0){
+        cycleFaceStyle();rightWinkCd=50;
+      }
+      rightWinkFrames=0;
+    }
+    if(leftWink){
+      leftWinkFrames=Math.min(leftWinkFrames+1,6);
+    } else {
+      if(leftWinkFrames>=4&&leftWinkCd===0){
+        faceScreenshot();leftWinkCd=50;
+      }
+      leftWinkFrames=0;
+    }
+
+    // ── Draw face grid + balloon ──
+    drawFaceGrid(lm,pt,W,H,Date.now()/1000);
+  });
+
+  const cam=new Camera(fcVideo,{onFrame:async()=>{if(currentTab===1)await fm.send({image:fcVideo})},width:1280,height:720});
+  cam.start();
+}
+
+// ── FACE GRID CONNECTIONS ──
+const FACE_CONNECTIONS=[
+  [10,338],[338,297],[297,332],[332,284],[284,251],[251,389],[389,356],[356,454],
+  [454,323],[323,361],[361,288],[288,397],[397,365],[365,379],[379,378],[378,400],
+  [400,377],[377,152],[152,148],[148,176],[176,149],[149,150],[150,136],[136,172],
+  [172,58],[58,132],[132,93],[93,234],[234,127],[127,162],[162,21],[21,54],
+  [54,103],[103,67],[67,109],[109,10],
+  [33,7],[7,163],[163,144],[144,145],[145,153],[153,154],[154,155],[155,133],
+  [33,246],[246,161],[161,160],[160,159],[159,158],[158,157],[157,173],[173,133],
+  [362,382],[382,381],[381,380],[380,374],[374,373],[373,390],[390,249],[249,263],
+  [362,398],[398,384],[384,385],[385,386],[386,387],[387,388],[388,466],[466,263],
+  [168,6],[6,197],[197,195],[195,5],[5,4],[4,1],[1,2],
+  [61,146],[146,91],[91,181],[181,84],[84,17],[17,314],[314,405],[405,321],[321,375],[375,291],
+  [61,185],[185,40],[40,39],[39,37],[37,0],[0,267],[267,269],[269,270],[270,409],[409,291],
+  [78,95],[95,88],[88,178],[178,87],[87,14],[14,317],[317,402],[402,318],[318,324],[324,308],
+  [78,191],[191,80],[80,81],[81,82],[82,13],[13,312],[312,311],[311,310],[310,415],[415,308],
+];
+
+const GRID_STYLES=[
+  {name:'CYAN GRID',    color:'#00f5ff', rgb:'0,245,255'},
+  {name:'NEON GREEN',   color:'#00ff66', rgb:'0,255,102'},
+  {name:'PLASMA PURPLE',color:'#cc44ff', rgb:'200,68,255'},
+  {name:'GOLD WIRE',    color:'#ffcc00', rgb:'255,204,0'},
+  {name:'GHOST WHITE',  color:'#ffffff', rgb:'255,255,255'},
+  {name:'INFRARED',     color:'#ff3333', rgb:'255,51,51'},
+];
+
+// Per-style name display
+function updateFaceStyleName(){
+  document.getElementById('fc-style').textContent='STYLE: '+GRID_STYLES[faceStyleIdx].name;
+}
+
+// Mouth smoothing state
+let _mouthSmooth=0;
+
+function drawFaceGrid(lm,pt,W,H,t){
+  const ctx=fcCtx;
+  const s=GRID_STYLES[faceStyleIdx];
+  const col=s.color, rgb=s.rgb;
+
+  // Face bounds
+  const lCheek=pt(234),rCheek=pt(454);
+  const forehead=pt(10),chin=pt(152);
+  const cx=(lCheek.x+rCheek.x)/2, cy=(forehead.y+chin.y)/2;
+  const faceH=Math.abs(chin.y-forehead.y);
+
+  // Mouth open → balloon inflate
+  const mouthOpenRaw=Math.abs(pt(14).y-pt(13).y)/(faceH*0.11);
+  const mouthOpen=Math.min(1,mouthOpenRaw);
+  _mouthSmooth+=( mouthOpen-_mouthSmooth)*0.22;
+  const inflate=_mouthSmooth;
+
+  // Balloon: push all points outward from face center
+  const bp=i=>{
+    const p=pt(i);
+    const dx=p.x-cx, dy=p.y-cy;
+    const scale=1+inflate*0.2;
+    return {x:cx+dx*scale, y:cy+dy*scale};
+  };
+
+  const alpha=0.5+inflate*0.35;
+  const lw=0.9+inflate*1.4;
+  const glow=inflate>0.25?10:4;
+
+  ctx.save();
+  ctx.shadowColor=col;
+  ctx.shadowBlur=glow;
+  ctx.lineWidth=lw;
+
+  // Draw all mesh connections
+  FACE_CONNECTIONS.forEach(([a,b])=>{
+    if(!lm[a]||!lm[b])return;
+    const pa=bp(a), pb=bp(b);
+    const depth=Math.max(0,Math.min(1,(lm[a].z+0.25)*3));
+    const la=alpha*(0.4+depth*0.6);
+    ctx.strokeStyle=`rgba(${rgb},${la.toFixed(2)})`;
+    ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();
+  });
+
+  // Landmark dots — only key points
+  ctx.shadowBlur=inflate>0.3?12:5;
+  [1,4,6,9,10,13,14,33,61,133,152,159,263,291,362,374,386,454].forEach(i=>{
+    if(!lm[i])return;
+    const p=bp(i);
+    const r=inflate>0.3?2.5:1.5;
+    ctx.fillStyle=`rgba(${rgb},${(alpha+0.2).toFixed(2)})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+  });
+
+  // Eye glow rings when mouth open
+  if(inflate>0.15){
+    [[159,145],[386,374]].forEach(([top,bot])=>{
+      const et=bp(top),eb=bp(bot);
+      const ecx=(et.x+eb.x)/2,ecy=(et.y+eb.y)/2;
+      const er=Math.abs(et.y-eb.y)*1.8;
+      const eg=ctx.createRadialGradient(ecx,ecy,0,ecx,ecy,er);
+      eg.addColorStop(0,`rgba(${rgb},${(inflate*0.6).toFixed(2)})`);
+      eg.addColorStop(1,`rgba(${rgb},0)`);
+      ctx.fillStyle=eg;
+      ctx.beginPath();ctx.arc(ecx,ecy,er,0,Math.PI*2);ctx.fill();
+    });
+  }
+
+  // AIR pressure bar — right side of face
+  if(inflate>0.05){
+    const bx=rCheek.x+8, by=cy-faceH*0.18, bh=faceH*0.36, bw=6;
+    ctx.strokeStyle=`rgba(${rgb},0.4)`;ctx.lineWidth=1;ctx.shadowBlur=0;
+    ctx.strokeRect(bx,by,bw,bh);
+    ctx.fillStyle=`rgba(${rgb},${(0.35+inflate*0.5).toFixed(2)})`;
+    ctx.fillRect(bx,by+bh*(1-inflate),bw,bh*inflate);
+    ctx.font='7px Share Tech Mono';ctx.fillStyle=`rgba(${rgb},0.6)`;
+    ctx.fillText('AIR',bx-1,by-4);
+    ctx.fillText(Math.round(inflate*100)+'%',bx-4,by+bh+11);
+  }
+
+  // Scanning line effect
+  const scanY=forehead.y+(Math.sin(t*1.2)*0.5+0.5)*faceH;
+  const sg=ctx.createLinearGradient(lCheek.x,0,rCheek.x,0);
+  sg.addColorStop(0,`rgba(${rgb},0)`);
+  sg.addColorStop(0.5,`rgba(${rgb},${(0.12+inflate*0.1).toFixed(2)})`);
+  sg.addColorStop(1,`rgba(${rgb},0)`);
+  ctx.fillStyle=sg;ctx.fillRect(lCheek.x,scanY-1,Math.abs(rCheek.x-lCheek.x),1.5);
+
+  ctx.restore();
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  TAB 2 — 3D GLOBE (fixed)
+// ═══════════════════════════════════════════════════════
+let glScene,glCamera,glRenderer,glGlobe,glGlobeGroup,glStars;
+let glZoom=1.0;
+let glTargetZoom=1.0;
+let glAutoSpin=0.003;
+let glIsExploded=false;
+let glIsHeld=false;
+let glExplodePieces=[];
+
+const glSX=makeSmoother(0.1);
+const glSY=makeSmoother(0.1);
+const glZoomS=makeSmoother(0.08); // very gentle zoom smoother to prevent shake
+let prevPinchDist=null;
+let fistTimer=null;
+let glHandVid,glHandCv,glHandCtx;
+const glStat=()=>document.getElementById('gl-stat');
+
+// Country data: [lat, lon, capital, fun fact, population, language, currency, area_km2, continent]
+// aliases map spoken words → key
+const COUNTRY_ALIASES={
+  'united states':'usa','america':'usa','united states of america':'usa','the us':'usa','us':'usa',
+  'united kingdom':'uk','britain':'uk','england':'uk','great britain':'uk',
+  'south korea':'southkorea','korea':'southkorea','republic of korea':'southkorea',
+  'north korea':'northkorea','dprk':'northkorea',
+  'south africa':'southafrica','rsa':'southafrica',
+  'new zealand':'newzealand','nz':'newzealand','kiwi land':'newzealand',
+  'saudi arabia':'saudiarabia','ksa':'saudiarabia','saudi':'saudiarabia',
+  'united arab emirates':'uae','emirates':'uae','dubai':'uae','abu dhabi':'uae',
+  'sri lanka':'srilanka','ceylon':'srilanka',
+  'costa rica':'costarica',
+  'el salvador':'elsalvador',
+  'puerto rico':'puertorico',
+  'trinidad':'trinidadandtobago','trinidad and tobago':'trinidadandtobago',
+  'czech republic':'czechia','czech':'czechia',
+  'ivory coast':'cotedivoire',"cote d'ivoire":'cotedivoire',
+  'democratic republic of congo':'drc','congo':'congo',
+  'republic of congo':'congo',
+  'new guinea':'papuanewguinea','papua':'papuanewguinea','papua new guinea':'papuanewguinea',
+  'central african republic':'car',
+  'dominican republic':'dominicanrepublic',
+  'north macedonia':'northmacedonia','macedonia':'northmacedonia',
+  'bosnia':'bosniaherzegovina','bosnia and herzegovina':'bosniaherzegovina',
+  'myanmar':'burma','burma':'myanmar',
+  'kyrgyzstan':'kyrgyzstan','kyrgyz':'kyrgyzstan',
+};
+const COUNTRIES={
+  // ── ASIA ──
+  india:[20.5937,78.9629,'New Delhi','Birthplace of chess, yoga, and zero — world\'s largest democracy with incredible diversity','1.44 billion','Hindi, English & 21 other official languages','Indian Rupee (₹)','3,287,263 km²','Asia'],
+  china:[35.8617,104.1954,'Beijing','5000-year civilization; built the Great Wall; world\'s largest manufacturer and exporter','1.42 billion','Mandarin Chinese','Chinese Yuan (¥)','9,596,960 km²','Asia'],
+  japan:[36.2048,138.2529,'Tokyo','Inventor of anime, bullet trains & instant noodles — world\'s most punctual rail network','125 million','Japanese','Japanese Yen (¥)','377,975 km²','Asia'],
+  indonesia:[-0.7893,113.9213,'Jakarta','World\'s largest archipelago with 17,508 islands; 4th most populous country on Earth','277 million','Indonesian (Bahasa)','Indonesian Rupiah (IDR)','1,904,569 km²','Asia'],
+  pakistan:[30.3753,69.3451,'Islamabad','Home to K2, world\'s 2nd highest peak; cradle of the ancient Indus Valley civilization','231 million','Urdu & English','Pakistani Rupee (PKR)','881,913 km²','Asia'],
+  bangladesh:[23.685,90.3563,'Dhaka','Most densely populated large country on Earth; world\'s largest mangrove forest — the Sundarbans','170 million','Bengali','Bangladeshi Taka (BDT)','147,570 km²','Asia'],
+  philippines:[12.8797,121.774,'Manila','7,641 islands; world\'s longest archipelago coastline; birthplace of jeepney culture','115 million','Filipino & English','Philippine Peso (PHP)','300,000 km²','Asia'],
+  vietnam:[14.0583,108.2772,'Hanoi','S-shaped nation; Ha Long Bay has 1,969 islands; one of Southeast Asia\'s fastest growing economies','98 million','Vietnamese','Vietnamese Dong (VND)','331,212 km²','Asia'],
+  iran:[32.4279,53.6880,'Tehran','Ancient Persia; birthplace of algebra, backgammon, and one of humanity\'s oldest civilizations','87 million','Persian (Farsi)','Iranian Rial (IRR)','1,648,195 km²','Asia'],
+  turkey:[38.9637,35.2433,'Ankara','Bridges Europe and Asia; Istanbul was capital of 3 great empires — Byzantine, Roman & Ottoman','85 million','Turkish','Turkish Lira (TRY)','783,562 km²','Europe/Asia'],
+  thailand:[15.870,100.9925,'Bangkok','Land of Smiles; world\'s top Buddhist nation with golden temples and legendary street food','70 million','Thai','Thai Baht (฿)','513,120 km²','Asia'],
+  myanmar:[17.1751,95.9560,'Naypyidaw','Land of golden pagodas; has more Buddhist monks per capita than any other country','54 million','Burmese','Myanmar Kyat (MMK)','676,578 km²','Asia'],
+  southkorea:[35.9078,127.7669,'Seoul','Gave the world BTS, Samsung, Hyundai & K-drama; fastest internet speeds on Earth','52 million','Korean','South Korean Won (KRW)','100,410 km²','Asia'],
+  iraq:[33.2232,43.6793,'Baghdad','Birthplace of writing & civilization — ancient Mesopotamia; home to the Tigris and Euphrates','42 million','Arabic & Kurdish','Iraqi Dinar (IQD)','438,317 km²','Asia'],
+  afghanistan:[33.9391,67.7100,'Kabul','Crossroads of civilizations; the Silk Road ran through it; some of Asia\'s highest mountains','40 million','Pashto & Dari','Afghan Afghani (AFN)','652,230 km²','Asia'],
+  malaysia:[4.2105,101.9758,'Kuala Lumpur','Home of the Petronas Towers; incredibly biodiverse rainforest; melting pot of 3 cultures','33 million','Malay','Malaysian Ringgit (MYR)','329,847 km²','Asia'],
+  nepal:[28.3949,84.1240,'Kathmandu','8 of the world\'s 10 highest peaks; birthplace of Siddhartha Gautama — the Buddha','30 million','Nepali','Nepalese Rupee (NPR)','147,181 km²','Asia'],
+  saudiarabia:[23.8859,45.0792,'Riyadh','Birthplace of Islam; world\'s 2nd largest oil reserves; Empty Quarter is Earth\'s largest sand desert','35 million','Arabic','Saudi Riyal (SAR)','2,149,690 km²','Asia'],
+  uae:[23.4241,53.8478,'Abu Dhabi','Desert turned megacity; Burj Khalifa at 828m is the world\'s tallest building','10 million','Arabic','UAE Dirham (AED)','83,600 km²','Asia'],
+  israel:[31.0461,34.8516,'Jerusalem','One of the world\'s oldest countries; global tech hub nicknamed Silicon Wadi; Dead Sea is Earth\'s lowest point','9 million','Hebrew & Arabic','Israeli New Shekel (ILS)','20,770 km²','Asia'],
+  jordan:[30.5852,36.2384,'Amman','Home to Petra, the lost city carved in rose-red stone; shares the Dead Sea with Israel','10 million','Arabic','Jordanian Dinar (JOD)','89,342 km²','Asia'],
+  kazakhstan:[48.0196,66.9237,'Nur-Sultan','World\'s largest landlocked country; Baikonur Cosmodrome launched humanity to space','19 million','Kazakh & Russian','Kazakhstani Tenge (KZT)','2,724,900 km²','Asia'],
+  uzbekistan:[41.3775,64.5853,'Tashkent','Ancient Silk Road cities of Samarkand and Bukhara; major cotton and natural gas producer','36 million','Uzbek','Uzbekistani Som (UZS)','448,978 km²','Asia'],
+  azerbaijan:[40.1431,47.5769,'Baku','First Muslim-majority country to have opera and theatre; Caspian Sea petroleum heritage','10 million','Azerbaijani','Azerbaijani Manat (AZN)','86,600 km²','Asia'],
+  georgia:[42.3154,43.3569,'Tbilisi','One of the world\'s oldest wine regions (8,000 years); ancient Caucasus crossroads culture','4 million','Georgian','Georgian Lari (GEL)','69,700 km²','Asia/Europe'],
+  armenia:[40.0691,45.0382,'Yerevan','First nation to adopt Christianity (301 AD); Mount Ararat is its national symbol','3 million','Armenian','Armenian Dram (AMD)','29,743 km²','Asia'],
+  singapore:[1.3521,103.8198,'Singapore','Tiny island-state went from 3rd world to 1st in 30 years; world\'s best airport 8 years running','6 million','English, Malay, Tamil & Mandarin','Singapore Dollar (SGD)','728 km²','Asia'],
+  srilanka:[7.8731,80.7718,'Sri Malharaja','Teardrop of the Indian Ocean; produces the world\'s finest Ceylon tea; ancient Buddhist temples','22 million','Sinhala & Tamil','Sri Lankan Rupee (LKR)','65,610 km²','Asia'],
+  northkorea:[40.3399,127.5101,'Pyongyang','Most isolated nation on Earth; DMZ with South Korea is world\'s most heavily fortified border','26 million','Korean','North Korean Won (KPW)','120,538 km²','Asia'],
+  mongolia:[46.8625,103.8467,'Ulaanbaatar','Home of Genghis Khan who built the largest contiguous land empire in history','3 million','Mongolian','Mongolian Tögrög (MNT)','1,564,116 km²','Asia'],
+  cambodia:[12.5657,104.9910,'Phnom Penh','Home to Angkor Wat, the largest religious monument on Earth','17 million','Khmer','Cambodian Riel (KHR)','181,035 km²','Asia'],
+  laos:[19.8563,102.4955,'Vientiane','Most bombed country per capita in history; untouched Mekong River landscapes','7 million','Lao','Lao Kip (LAK)','236,800 km²','Asia'],
+  qatar:[25.3548,51.1839,'Doha','Richest country per capita; hosted FIFA World Cup 2022; world\'s largest LNG exporter','3 million','Arabic','Qatari Riyal (QAR)','11,586 km²','Asia'],
+  kuwait:[29.3117,47.4818,'Kuwait City','Small but mighty oil state; liberated in the Gulf War of 1991','4 million','Arabic','Kuwaiti Dinar (KWD)','17,818 km²','Asia'],
+  bahrain:[26.0275,50.5500,'Manama','Tiny island kingdom; first Gulf state to discover oil; financial hub of the Arab world','1.5 million','Arabic','Bahraini Dinar (BHD)','765 km²','Asia'],
+  oman:[21.5126,55.9233,'Muscat','Ancient maritime traders; Frankincense Road; one of the most stable Gulf nations','4.5 million','Arabic','Omani Rial (OMR)','309,500 km²','Asia'],
+  yemen:[15.5527,48.5164,'Sana\'a','Arabian Peninsula\'s most ancient civilization; Sana\'a is one of the world\'s oldest cities','33 million','Arabic','Yemeni Rial (YER)','527,968 km²','Asia'],
+  kyrgyzstan:[41.2044,74.7661,'Bishkek','Land of epic mountains and nomadic yurt culture in the Tian Shan range','7 million','Kyrgyz & Russian','Kyrgystani Som (KGS)','199,951 km²','Asia'],
+  tajikistan:[38.8610,71.2761,'Dushanbe','93% mountainous; Pamir Mountains called the Roof of the World','10 million','Tajik','Tajikistani Somoni (TJS)','143,100 km²','Asia'],
+  // ── EUROPE ──
+  russia:[61.524,105.3188,'Moscow','Largest country on Earth across 11 time zones; first nation to launch humans to space','145 million','Russian','Russian Ruble (₽)','17,098,242 km²','Europe/Asia'],
+  germany:[51.1657,10.4515,'Berlin','Birthplace of cars, aspirin & the printing press; reunified in 1990 after the Cold War','84 million','German','Euro (€)','357,386 km²','Europe'],
+  france:[46.2276,2.2137,'Paris','Most visited country on Earth; Eiffel Tower, French cuisine, and human rights philosophy','68 million','French','Euro (€)','643,801 km²','Europe'],
+  uk:[55.3781,-3.4360,'London','Once ruled 25% of Earth; birthplace of industrial revolution, Shakespeare & Isaac Newton','67 million','English','British Pound (£)','243,610 km²','Europe'],
+  italy:[41.8719,12.5674,'Rome','Heart of the Roman Empire; Vatican City; the Colosseum; more UNESCO sites than any country','60 million','Italian','Euro (€)','301,340 km²','Europe'],
+  spain:[40.4637,-3.7492,'Madrid','Once the world\'s mightiest empire; gave the world flamenco, paella & Real Madrid','47 million','Spanish','Euro (€)','505,990 km²','Europe'],
+  ukraine:[48.3794,31.1656,'Kyiv','Europe\'s 2nd largest country; Kyiv founded in the 5th century; breadbasket of Europe','43 million','Ukrainian','Ukrainian Hryvnia (UAH)','603,550 km²','Europe'],
+  poland:[51.9194,19.1451,'Warsaw','Birthplace of Copernicus & Marie Curie; Europe\'s 6th most populous nation','38 million','Polish','Polish Zloty (PLN)','312,696 km²','Europe'],
+  sweden:[60.1282,18.6435,'Stockholm','Birthplace of IKEA, Spotify, Minecraft & ABBA; consistently top-ranked for happiness','10 million','Swedish','Swedish Krona (SEK)','450,295 km²','Europe'],
+  netherlands:[52.1326,5.2913,'Amsterdam','Land of windmills, tulips & Rembrandt; world\'s most bicycle-friendly country','17 million','Dutch','Euro (€)','41,543 km²','Europe'],
+  belgium:[50.5039,4.4699,'Brussels','Capital of the European Union; home to waffles, chocolate & the best beer in the world','11 million','Dutch, French & German','Euro (€)','30,528 km²','Europe'],
+  switzerland:[46.8182,8.2275,'Bern','Home of the Red Cross; famous for watches, cheese fondue & Alpine skiing','8 million','German, French, Italian & Romansh','Swiss Franc (CHF)','41,285 km²','Europe'],
+  austria:[47.5162,14.5501,'Vienna','Mozart\'s birthplace; classical music capital of the world; Coffee House culture is UNESCO heritage','9 million','German','Euro (€)','83,871 km²','Europe'],
+  portugal:[39.3999,-8.2245,'Lisbon','First global maritime empire; Vasco da Gama sailed to India; gave Portuguese to 260M people','10 million','Portuguese','Euro (€)','92,212 km²','Europe'],
+  czechia:[49.8175,15.4730,'Prague','Heart of Europe; Bohemian glass & beer culture; Prague Castle is world\'s largest ancient castle','11 million','Czech','Czech Koruna (CZK)','78,866 km²','Europe'],
+  greece:[39.0742,21.8243,'Athens','Birthplace of democracy, philosophy, the Olympics & Western civilization itself','11 million','Greek','Euro (€)','131,957 km²','Europe'],
+  hungary:[47.1625,19.5033,'Budapest','Thermal bath capital of Europe; Rubik\'s Cube was invented here; stunning Danube riverside','10 million','Hungarian','Hungarian Forint (HUF)','93,028 km²','Europe'],
+  romania:[45.9432,24.9668,'Bucharest','Land of Dracula\'s Transylvania; the Carpathian mountains; Danube Delta biodiversity wonder','19 million','Romanian','Romanian Leu (RON)','238,397 km²','Europe'],
+  norway:[60.4720,8.4689,'Oslo','Land of the midnight sun & northern lights; highest human development index; inventor of the cheese slicer','5 million','Norwegian','Norwegian Krone (NOK)','385,207 km²','Europe'],
+  denmark:[56.2639,9.5018,'Copenhagen','Birthplace of LEGO & Hans Christian Andersen; happiest country on Earth multiple times','6 million','Danish','Danish Krone (DKK)','42,924 km²','Europe'],
+  finland:[61.9241,25.7482,'Helsinki','World\'s happiest country; land of 188,000 lakes, saunas & Santa Claus','5.5 million','Finnish & Swedish','Euro (€)','338,145 km²','Europe'],
+  serbia:[44.0165,21.0059,'Belgrade','Birthplace of Nikola Tesla; ancient Danube confluence city; emerging tech hub','7 million','Serbian','Serbian Dinar (RSD)','77,474 km²','Europe'],
+  croatia:[45.1000,15.2000,'Zagreb','1,200 islands; birthplace of the necktie; Dubrovnik is the real-life King\'s Landing','4 million','Croatian','Euro (€)','56,594 km²','Europe'],
+  slovakia:[48.6690,19.6990,'Bratislava','Most castles per capita in Europe; Slovak forests cover 40% of the country','5.5 million','Slovak','Euro (€)','49,035 km²','Europe'],
+  bulgaria:[42.7339,25.4858,'Sofia','One of Europe\'s oldest countries; yogurt originated here; rose oil capital of the world','7 million','Bulgarian','Bulgarian Lev (BGN)','110,879 km²','Europe'],
+  ireland:[53.1424,-7.6921,'Dublin','Gave the world Guinness, U2, and James Joyce; Celts, cliffs, and 40 shades of green','5 million','Irish & English','Euro (€)','70,273 km²','Europe'],
+  albania:[41.1533,20.1683,'Tirana','Ancient Illyrian homeland; UNESCO-listed Berat & Gjirokastër cities; Albanian Alps','3 million','Albanian','Albanian Lek (ALL)','28,748 km²','Europe'],
+  northmacedonia:[41.6086,21.7453,'Skopje','Birthplace of Alexander the Great; Ohrid Lake is one of Europe\'s oldest and deepest','2 million','Macedonian','Macedonian Denar (MKD)','25,713 km²','Europe'],
+  bosniaherzegovina:[43.9159,17.6791,'Sarajevo','City where WWI began; extraordinary medieval history; one of Europe\'s most underrated destinations','3.5 million','Bosnian, Serbian & Croatian','Bosnia-Herzegovina Convertible Mark (BAM)','51,197 km²','Europe'],
+  iceland:[64.9631,-19.0208,'Reykjavik','Land of Fire and Ice; runs on 100% renewable energy; world\'s oldest parliament (930 AD)','370,000','Icelandic','Icelandic Króna (ISK)','103,000 km²','Europe'],
+  luxembourg:[49.8153,6.1296,'Luxembourg City','World\'s richest country per capita; founding member of the EU and NATO','660,000','Luxembourgish, French & German','Euro (€)','2,586 km²','Europe'],
+  malta:[35.9375,14.3754,'Valletta','World\'s smallest EU capital; ancient megalithic temples older than Stonehenge','500,000','Maltese & English','Euro (€)','316 km²','Europe'],
+  // ── AFRICA ──
+  nigeria:[9.0820,8.6753,'Abuja','Most populous African nation; Nollywood is world\'s 2nd largest film industry after Bollywood','220 million','English (+ 500 local languages)','Nigerian Naira (NGN)','923,768 km²','Africa'],
+  ethiopia:[9.1450,40.4897,'Addis Ababa','Oldest independent African nation; birthplace of coffee; ancient Aksumite Empire','126 million','Amharic','Ethiopian Birr (ETB)','1,104,300 km²','Africa'],
+  egypt:[26.8206,30.8025,'Cairo','Cradle of civilization; Pyramids of Giza — the only surviving ancient 7 Wonders','106 million','Arabic','Egyptian Pound (EGP)','1,002,450 km²','Africa'],
+  drc:[-4.0383,21.7587,'Kinshasa','Congo River basin; world\'s 2nd largest rainforest; enormous mineral wealth','100 million','French (+ 242 local languages)','Congolese Franc (CDF)','2,344,858 km²','Africa'],
+  tanzania:[-6.3690,34.8888,'Dodoma','Mount Kilimanjaro — Africa\'s highest peak; Serengeti migration; Zanzibar spice islands','64 million','Swahili & English','Tanzanian Shilling (TZS)','945,087 km²','Africa'],
+  kenya:[-0.0236,37.9062,'Nairobi','Cradle of humanity; Maasai Mara hosts world\'s greatest annual wildlife migration','55 million','Swahili & English','Kenyan Shilling (KES)','580,367 km²','Africa'],
+  southafrica:[-30.5595,22.9375,'Pretoria','Rainbow Nation with 11 official languages; birthplace of Mandela; Cape of Good Hope','60 million','11 official languages (Zulu, Xhosa, Afrikaans...)','South African Rand (ZAR)','1,221,037 km²','Africa'],
+  ghana:[7.9465,-1.0232,'Accra','First sub-Saharan African nation to gain independence (1957); world\'s 2nd cocoa producer','33 million','English (+ Twi & Ga)','Ghanaian Cedi (GHS)','238,533 km²','Africa'],
+  mozambique:[-18.6657,35.5296,'Maputo','Long Indian Ocean coastline; Portuguese colonial heritage; recovering economy','33 million','Portuguese','Mozambican Metical (MZN)','801,590 km²','Africa'],
+  angola:[-11.2027,17.8739,'Luanda','Africa\'s 2nd largest oil producer; war-era recovery into one of Africa\'s fastest growing economies','34 million','Portuguese','Angolan Kwanza (AOA)','1,246,700 km²','Africa'],
+  uganda:[1.3733,32.2903,'Kampala','Pearl of Africa; source of the Nile River; mountain gorillas in Bwindi Forest','48 million','English & Swahili','Ugandan Shilling (UGX)','241,038 km²','Africa'],
+  algeria:[28.0339,1.6596,'Algiers','Africa\'s largest country; mostly Sahara Desert; Roman ruins and Berber culture','45 million','Arabic & Berber','Algerian Dinar (DZD)','2,381,741 km²','Africa'],
+  morocco:[31.7917,-7.0926,'Rabat','Gateway between Europe and Africa; ancient medinas; Atlas Mountains and Sahara dunes','37 million','Arabic & Berber','Moroccan Dirham (MAD)','446,550 km²','Africa'],
+  sudan:[12.8628,30.2176,'Khartoum','Nile civilizations; Meroe pyramids; confluence of the Blue and White Nile rivers','45 million','Arabic & English','Sudanese Pound (SDG)','1,886,068 km²','Africa'],
+  cameroon:[3.8480,11.5021,'Yaoundé','Africa in miniature — rainforests, savannas, beaches & mountains in one country','28 million','French & English','Central African CFA Franc','475,440 km²','Africa'],
+  cotedivoire:[7.5400,-5.5471,'Yamoussoukro','World\'s top cocoa producer; Basilica of Our Lady of Peace is world\'s largest church','27 million','French','West African CFA Franc','322,463 km²','Africa'],
+  mali:[17.5707,-3.9962,'Bamako','Ancient Mali Empire and Mansa Musa — once the world\'s richest man; Timbuktu city of gold','22 million','French','West African CFA Franc','1,240,192 km²','Africa'],
+  senegal:[14.4974,-14.4524,'Dakar','Gateway to West Africa; westernmost point of mainland Africa; vibrant music scene','17 million','French','West African CFA Franc','196,722 km²','Africa'],
+  zimbabwe:[-19.0154,29.1549,'Harare','Victoria Falls — one of the 7 Natural Wonders; ancient Great Zimbabwe ruins','16 million','English, Shona & Ndebele','Zimbabwean Dollar (ZWL)','390,757 km²','Africa'],
+  zambia:[-13.1339,27.8493,'Lusaka','Victoria Falls shared with Zimbabwe; copper belt economy; diverse national parks','19 million','English (+ 70 indigenous)','Zambian Kwacha (ZMW)','752,618 km²','Africa'],
+  // ── AMERICAS ──
+  usa:[37.0902,-95.7129,'Washington D.C.','World\'s largest economy; NASA, Hollywood, Silicon Valley & Grand Canyon across 50 states','335 million','English','US Dollar ($)','9,833,517 km²','North America'],
+  brazil:[-14.235,-51.9253,'Brasília','Amazon produces 20% of Earth\'s oxygen; Carnival; 5-time FIFA World Cup champions','215 million','Portuguese','Brazilian Real (R$)','8,515,767 km²','South America'],
+  canada:[56.1304,-106.3468,'Ottawa','World\'s 2nd largest country; 20% of global fresh water; invented basketball & hockey','38 million','English & French','Canadian Dollar (C$)','9,984,670 km²','North America'],
+  mexico:[23.6345,-102.5528,'Mexico City','Birthplace of chocolate & corn; Aztec Tenochtitlan; Day of the Dead; spicy food','130 million','Spanish','Mexican Peso (MXN)','1,964,375 km²','North America'],
+  colombia:[4.5709,-74.2973,'Bogotá','Top coffee & flower exporter; birthplace of Gabriel García Márquez; Cartagena heritage city','51 million','Spanish','Colombian Peso (COP)','1,141,748 km²','South America'],
+  argentina:[-38.4161,-63.6167,'Buenos Aires','Gave the world tango & Messi; Patagonia wilderness; 3-time FIFA World Cup champions','46 million','Spanish','Argentine Peso (ARS)','2,780,400 km²','South America'],
+  peru:[-9.1900,-75.0152,'Lima','Machu Picchu & the Inca Empire; birthplace of potatoes, quinoa & ceviche','33 million','Spanish, Quechua & Aymara','Peruvian Sol (PEN)','1,285,216 km²','South America'],
+  venezuela:[6.4238,-66.5897,'Caracas','Angel Falls — world\'s highest waterfall at 979m; once among South America\'s richest nations','28 million','Spanish','Venezuelan Bolívar (VES)','916,445 km²','South America'],
+  chile:[-35.6751,-71.5430,'Santiago','Longest country on Earth (4,300 km); world\'s driest desert; best stargazing on Earth','19 million','Spanish','Chilean Peso (CLP)','756,102 km²','South America'],
+  ecuador:[-1.8312,-78.1834,'Quito','Sits on the equator; Galápagos Islands inspired Darwin\'s evolution theory; Avenue of Volcanoes','18 million','Spanish','US Dollar ($)','283,561 km²','South America'],
+  bolivia:[-16.2902,-63.5887,'Sucre','World\'s highest capital city; Uyuni Salt Flat is the world\'s largest mirror','12 million','Spanish, Quechua & Aymara','Bolivian Boliviano (BOB)','1,098,581 km²','South America'],
+  paraguay:[-23.4425,-58.4438,'Asunción','Landlocked; world\'s largest hydroelectric dam Itaipu shared with Brazil','7 million','Spanish & Guaraní','Paraguayan Guaraní (PYG)','406,752 km²','South America'],
+  uruguay:[-32.5228,-55.7658,'Montevideo','First country to legalize cannabis nationwide; world\'s highest quality of life in South America','3.5 million','Spanish','Uruguayan Peso (UYU)','176,215 km²','South America'],
+  cuba:[21.5218,-77.7812,'Havana','Classic cars, salsa music & cigars; US embargo shaped its unique culture','11 million','Spanish','Cuban Peso (CUP)','109,884 km²','Caribbean'],
+  dominicanrepublic:[18.7357,-70.1627,'Santo Domingo','First European settlement in the Americas; Merengue capital; stunning Punta Cana beaches','11 million','Spanish','Dominican Peso (DOP)','48,671 km²','Caribbean'],
+  haiti:[18.9712,-72.2852,'Port-au-Prince','First Black republic in the world (1804); first country in the Western Hemisphere to free itself from slavery','11 million','Haitian Creole & French','Haitian Gourde (HTG)','27,750 km²','Caribbean'],
+  jamaica:[18.1096,-77.2975,'Kingston','Birthplace of Bob Marley & reggae; world\'s fastest sprinters; Blue Mountain coffee','3 million','English','Jamaican Dollar (JMD)','10,990 km²','Caribbean'],
+  costarica:[9.7489,-83.7534,'San José','No army since 1948; 25% of land is protected nature; pura vida lifestyle','5 million','Spanish','Costa Rican Colón (CRC)','51,100 km²','Central America'],
+  guatemala:[15.7835,-90.2308,'Guatemala City','Heart of the ancient Maya civilization; most volcanoes in Central America','17 million','Spanish (+ 22 Mayan languages)','Guatemalan Quetzal (GTQ)','108,889 km²','Central America'],
+  honduras:[15.1999,-86.2419,'Tegucigalpa','Ancient Mayan ruins of Copán; second largest coral reef in the world (Mesoamerican)','10 million','Spanish','Honduran Lempira (HNL)','112,492 km²','Central America'],
+  panama:[8.5380,-80.7821,'Panama City','Panama Canal connects Atlantic & Pacific; one of the world\'s great engineering feats','4 million','Spanish','Panamanian Balboa / US Dollar','75,417 km²','Central America'],
+  // ── OCEANIA ──
+  australia:[-25.2744,133.7751,'Canberra','Unique continent; 80% endemic wildlife; Great Barrier Reef & Uluru','26 million','English','Australian Dollar (A$)','7,692,024 km²','Oceania'],
+  newzealand:[-40.9006,174.886,'Wellington','First country to grant women the vote (1893); Lord of the Rings; world\'s best rugby team','5 million','English & Māori','New Zealand Dollar (NZD)','270,467 km²','Oceania'],
+  papuanewguinea:[-6.3150,143.9555,'Port Moresby','Most linguistically diverse country — over 800 languages; pristine coral reefs','10 million','Tok Pisin, English & Hiri Motu','Papua New Guinean Kina (PGK)','462,840 km²','Oceania'],
+  fiji:[-17.7134,178.0650,'Suva','330 islands; world\'s best coral reefs; Fire Walking ceremonial ritual from ancient times','930,000','Fijian, English & Hindi','Fijian Dollar (FJD)','18,274 km²','Oceania'],
+};
+
+// Edu content (basic, from COUNTRIES)
+const EDU_DATA={};
+Object.entries(COUNTRIES).forEach(([k,[lat,lon,capital,fact,pop,lang,currency,area,continent]])=>{
+  EDU_DATA[k]={capital,fact,lat,lon,pop,lang,currency,area,continent};
+});
+
+// Deep country knowledge — PM, President, national symbols, GDP, religion, famous people, independence, etc.
+const DEEP={
+  india:{pm:'Narendra Modi',president:'Droupadi Murmu',gdp:'$3.7 trillion (5th largest)',religion:'Hinduism (79%), Islam (14%), Christianity (2.3%)',natAnimal:'Bengal Tiger',natBird:'Indian Peacock',natFlower:'Lotus',natSport:'Field Hockey',natTree:'Banyan',anthem:'Jana Gana Mana',independence:'15 August 1947 (from Britain)',famous:'Mahatma Gandhi, A.P.J. Abdul Kalam, Sachin Tendulkar, Amitabh Bachchan, Ratan Tata, Virat Kohli, AR Rahman',govt:'Federal Parliamentary Republic',timezone:'IST (UTC+5:30)',callingCode:'+91',internet:'.in',olympics:'First in 1900; Gold in Field Hockey 8 times',food:'Biryani, Dosa, Butter Chicken, Samosa, Chai',landmark:'Taj Mahal, Red Fort, Qutub Minar, Gateway of India'},
+  usa:{pm:'N/A (Presidential system)',president:'Joe Biden (46th); Donald Trump elected 47th in 2024',gdp:'$27 trillion (1st largest)',religion:'Christianity (63%), No religion (28%), Islam (1%)',natAnimal:'Bald Eagle',natBird:'Bald Eagle',natFlower:'Rose',natSport:'American Football',natTree:'Oak',anthem:'The Star-Spangled Banner',independence:'4 July 1776 (from Britain)',famous:'Abraham Lincoln, Neil Armstrong, Elon Musk, Michael Jordan, Taylor Swift, Steve Jobs, Martin Luther King Jr.',govt:'Federal Presidential Republic',timezone:'UTC-5 to UTC-10 (multiple)',callingCode:'+1',internet:'.us',olympics:'Most gold medals in history — over 1,000',food:'Burgers, Hot Dogs, Apple Pie, BBQ, Clam Chowder',landmark:'Statue of Liberty, Grand Canyon, White House, Golden Gate Bridge'},
+  china:{pm:'Li Qiang (Premier)',president:'Xi Jinping (General Secretary & President)',gdp:'$17.8 trillion (2nd largest)',religion:'Non-religious (52%), Buddhism (18%), Folk religion (22%)',natAnimal:'Giant Panda',natBird:'Red-crowned Crane',natFlower:'Plum Blossom',natSport:'Table Tennis',natTree:'Ginkgo',anthem:'March of the Volunteers',independence:'1 October 1949 (PRC founding)',famous:'Mao Zedong, Confucius, Bruce Lee, Yao Ming, Jack Ma, Alibaba founder',govt:'One-party Socialist Republic',timezone:'CST (UTC+8)',callingCode:'+86',internet:'.cn',olympics:'3rd most gold medals all time',food:'Peking Duck, Dim Sum, Hot Pot, Kung Pao Chicken, Dumplings',landmark:'Great Wall, Forbidden City, Terracotta Army, Li River'},
+  uk:{pm:'Rishi Sunak (until 2024); Keir Starmer (from July 2024)',president:'N/A — Constitutional Monarchy; King Charles III',gdp:'$3.1 trillion (6th largest)',religion:'Christianity (46%), No religion (37%), Islam (6%)',natAnimal:'Lion (England), Red Dragon (Wales), Unicorn (Scotland)',natBird:'European Robin',natFlower:'Rose (England), Thistle (Scotland), Daffodil (Wales)',natSport:'Cricket & Football',natTree:'Oak',anthem:'God Save the King',independence:'United Kingdom formed 1 May 1707',famous:'Winston Churchill, Isaac Newton, The Beatles, Shakespeare, Stephen Hawking, Adele, David Beckham, Charles Darwin',govt:'Constitutional Monarchy & Parliamentary Democracy',timezone:'GMT/BST (UTC+0 / UTC+1)',callingCode:'+44',internet:'.uk',olympics:'5th most gold medals all time',food:'Fish and Chips, Full English Breakfast, Chicken Tikka Masala, Scones',landmark:'Big Ben, Buckingham Palace, Stonehenge, Tower Bridge'},
+  russia:{pm:'Mikhail Mishustin',president:'Vladimir Putin',gdp:'$2.2 trillion (11th largest)',religion:'Russian Orthodox (71%), Islam (10%)',natAnimal:'Eurasian Brown Bear',natBird:'Tufted Eagle-Owl',natFlower:'Chamomile',natSport:'Bandy (ice hockey variant) & Football',natTree:'Birch',anthem:'National Anthem of Russia',independence:'12 June 1990 (from USSR)',famous:'Vladimir Putin, Leo Tolstoy, Fyodor Dostoevsky, Yuri Gagarin, Tchaikovsky, Mikhail Gorbachev',govt:'Federal Semi-Presidential Republic',timezone:'UTC+2 to UTC+12 (11 time zones)',callingCode:'+7',internet:'.ru',olympics:'Among the most decorated nations historically',food:'Borscht, Pelmeni, Beef Stroganoff, Blini, Caviar',landmark:'Red Square, Kremlin, Lake Baikal, Trans-Siberian Railway'},
+  japan:{pm:'Fumio Kishida (until 2024); Shigeru Ishiba (from Oct 2024)',president:'N/A — Constitutional Monarchy; Emperor Naruhito',gdp:'$4.2 trillion (4th largest)',religion:'Shinto (70%), Buddhism (69%) — many practice both',natAnimal:'Green Pheasant',natBird:'Green Pheasant',natFlower:'Cherry Blossom (Sakura) & Chrysanthemum',natSport:'Sumo Wrestling',natTree:'Cherry Blossom',anthem:'Kimigayo (world\'s shortest national anthem)',independence:'11 February 660 BC (traditional); Modern state 3 May 1947',famous:'Emperor Naruhito, Hayao Miyazaki, Akira Kurosawa, Ichiro Suzuki, Naomi Osaka, Marie Kondo',govt:'Constitutional Monarchy & Parliamentary Democracy',timezone:'JST (UTC+9)',callingCode:'+81',internet:'.jp',olympics:'Hosted 1964 & 2020 Tokyo Olympics',food:'Sushi, Ramen, Tempura, Udon, Mochi, Wagyu Beef',landmark:'Mount Fuji, Fushimi Inari Shrine, Tokyo Skytree, Hiroshima Peace Memorial'},
+  germany:{pm:'N/A',president:'Frank-Walter Steinmeier',gdp:'$4.4 trillion (3rd largest)',religion:'Christianity (55%), No religion (38%)',natAnimal:'Black Eagle',natBird:'White Stork',natFlower:'Cornflower',natSport:'Football (Soccer)',natTree:'Oak',anthem:'Das Lied der Deutschen (Deutschlandlied)',independence:'3 October 1990 (Reunification)',famous:'Albert Einstein, Beethoven, Johann Sebastian Bach, Karl Marx, Angela Merkel, Michael Schumacher',govt:'Federal Parliamentary Republic',timezone:'CET (UTC+1)',callingCode:'+49',internet:'.de',olympics:'5th most gold medals all time',food:'Bratwurst, Sauerkraut, Pretzels, Black Forest Cake, Schnitzel',landmark:'Brandenburg Gate, Neuschwanstein Castle, Cologne Cathedral, Berlin Wall Memorial'},
+  france:{pm:'Michel Barnier (2024)',president:'Emmanuel Macron',gdp:'$3.0 trillion (7th largest)',religion:'Christianity (51%), No religion (34%), Islam (10%)',natAnimal:'Gallic Rooster',natBird:'Gallic Rooster',natFlower:'Iris',natSport:'Football & Rugby',natTree:'Oak',anthem:'La Marseillaise',independence:'14 July 1789 (Bastille Day — French Revolution)',famous:'Napoleon Bonaparte, Charles de Gaulle, Coco Chanel, Zinedine Zidane, Victor Hugo, Marie Curie (born Polish)',govt:'Semi-Presidential Republic',timezone:'CET (UTC+1)',callingCode:'+33',internet:'.fr',olympics:'6th most gold medals all time',food:'Croissant, Baguette, Escargot, Coq au Vin, Crème Brûlée, Macarons',landmark:'Eiffel Tower, Louvre Museum, Palace of Versailles, Mont Saint-Michel'},
+  brazil:{pm:'N/A (Presidential system)',president:'Luiz Inácio Lula da Silva',gdp:'$2.1 trillion (9th largest)',religion:'Christianity (88%) — largest Catholic population on Earth',natAnimal:'Jaguar',natBird:'Rufous-bellied Thrush',natFlower:'Cattleya Orchid',natSport:'Football (Soccer)',natTree:'Brazilwood (Pau-brasil)',anthem:'Hino Nacional Brasileiro',independence:'7 September 1822 (from Portugal)',famous:'Pelé, Ronaldo, Ayrton Senna, Lula, Paulo Coelho, Oscar Niemeyer',govt:'Federal Presidential Republic',timezone:'UTC-3 to UTC-5',callingCode:'+55',internet:'.br',olympics:'Hosted 2016 Rio Olympics; strong in Football & Volleyball',food:'Feijoada, Churrasco, Brigadeiro, Pão de Queijo, Açaí',landmark:'Christ the Redeemer, Amazon River, Iguazu Falls, Carnival Rio'},
+  australia:{pm:'Anthony Albanese',president:'N/A — Constitutional Monarchy; King Charles III represented by Governor-General',gdp:'$1.7 trillion (13th largest)',religion:'Christianity (44%), No religion (39%)',natAnimal:'Kangaroo & Emu',natBird:'Australian Magpie (unofficial); Emu on coat of arms',natFlower:'Golden Wattle',natSport:'Cricket & Australian Rules Football',natTree:'Golden Wattle',anthem:'Advance Australia Fair',independence:'1 January 1901 (Federation)',famous:'Cate Blanchett, Hugh Jackman, Steve Irwin, Kylie Minogue, Nick Cave',govt:'Federal Parliamentary Constitutional Monarchy',timezone:'UTC+8 to UTC+11',callingCode:'+61',internet:'.au',olympics:'Hosted 1956 & 2000; 6th most gold medals all time',food:'Vegemite, Meat Pie, Tim Tams, Pavlova, Lamingtons, Barramundi',landmark:'Sydney Opera House, Great Barrier Reef, Uluru, Bondi Beach'},
+  canada:{pm:'Justin Trudeau (until 2025); Mark Carney (from 2025)',president:'N/A — Constitutional Monarchy; King Charles III',gdp:'$2.1 trillion (10th largest)',religion:'Christianity (53%), No religion (34%)',natAnimal:'Beaver',natBird:'Common Loon',natFlower:'Maple Leaf (on flag)',natSport:'Ice Hockey (winter), Lacrosse (summer)',natTree:'Maple',anthem:'O Canada',independence:'1 July 1867 (from Britain)',famous:'Justin Trudeau, Wayne Gretzky, Celine Dion, Drake, Jim Carrey, Terry Fox, Neil Young',govt:'Federal Parliamentary Constitutional Monarchy',timezone:'UTC-3.5 to UTC-8',callingCode:'+1',internet:'.ca',olympics:'Hosted 1976 Montreal & 1988 Calgary',food:'Poutine, Maple Syrup, Butter Tarts, Nanaimo Bars, Beaver Tails',landmark:'Niagara Falls, CN Tower, Banff National Park, Northern Lights'},
+  italy:{pm:'Giorgia Meloni (first female PM)',president:'Sergio Mattarella',gdp:'$2.2 trillion (8th largest)',religion:'Christianity — Catholic (71%)',natAnimal:'Italian Wolf',natBird:'Common Sparrow',natFlower:'Lily',natSport:'Football (Soccer)',natTree:'Strawberry Tree',anthem:'Il Canto degli Italiani',independence:'17 March 1861 (Unification)',famous:'Leonardo da Vinci, Michelangelo, Galileo, Dante, Sophia Loren, Ferrari, Valentino Rossi',govt:'Parliamentary Republic',timezone:'CET (UTC+1)',callingCode:'+39',internet:'.it',olympics:'Hosted 1956 & 2006 Winter Olympics',food:'Pizza, Pasta, Gelato, Risotto, Tiramisu, Prosciutto',landmark:'Colosseum, Vatican, Leaning Tower of Pisa, Venice Canals, Amalfi Coast'},
+  spain:{pm:'Pedro Sánchez',president:'N/A — Constitutional Monarchy; King Felipe VI',gdp:'$1.6 trillion (15th largest)',religion:'Christianity — Catholic (60%)',natAnimal:'Bull',natBird:'Spanish Imperial Eagle',natFlower:'Red Carnation',natSport:'Football (Soccer)',natTree:'Holm Oak',anthem:'Marcha Real (no official lyrics!)',independence:'1479 (Unification of Spain)',famous:'Pablo Picasso, Salvador Dali, Francisco Goya, Rafael Nadal, Penélope Cruz, Enrique Iglesias',govt:'Parliamentary Constitutional Monarchy',timezone:'CET (UTC+1)',callingCode:'+34',internet:'.es',olympics:'Hosted 1992 Barcelona',food:'Paella, Tapas, Gazpacho, Jamón Ibérico, Churros, Sangria',landmark:'Sagrada Familia, Alhambra, Park Güell, Prado Museum, La Tomatina festival'},
+  mexico:{pm:'N/A (Presidential system)',president:'Claudia Sheinbaum (first female president, 2024)',gdp:'$1.3 trillion (15th largest)',religion:'Christianity — Catholic (78%)',natAnimal:'Golden Eagle & Jaguar',natBird:'Golden Eagle (on flag)',natFlower:'Dahlia',natSport:'Football (Soccer)',natTree:'Ahuehuete (Montezuma Cypress)',anthem:'Himno Nacional Mexicano',independence:'16 September 1810 (from Spain)',famous:'Frida Kahlo, Carlos Slim, Salma Hayek, Octavio Paz, Hugo Sánchez',govt:'Federal Presidential Republic',timezone:'UTC-6 to UTC-8',callingCode:'+52',internet:'.mx',olympics:'Hosted 1968 Summer Olympics',food:'Tacos, Guacamole, Enchiladas, Chiles en Nogada, Tamales, Mezcal',landmark:'Chichen Itza, Teotihuacan, Copper Canyon, Cancun beaches'},
+  south_korea:{pm:'Han Duck-soo',president:'Yoon Suk-yeol (impeached 2024); acting president after',gdp:'$1.7 trillion (14th largest)',religion:'No religion (56%), Christianity (28%), Buddhism (16%)',natAnimal:'Siberian Tiger',natBird:'Korean Magpie (Pica pica)',natFlower:'Mugunghwa (Rose of Sharon)',natSport:'Taekwondo',natTree:'Korean Pine',anthem:'Aegukga',independence:'15 August 1945 (from Japan); Republic 15 August 1948',famous:'BTS, Blackpink, Bong Joon-ho (Parasite), Lee Min-ho, Son Heung-min, Park Ji-sung',govt:'Presidential Republic',timezone:'KST (UTC+9)',callingCode:'+82',internet:'.kr',olympics:'Hosted 1988 Seoul & 2018 PyeongChang Winter',food:'Kimchi, Bibimbap, Korean BBQ, Tteokbokki, Bulgogi, Korean Fried Chicken',landmark:'Gyeongbokgung Palace, N Seoul Tower, Jeju Island, DMZ'},
+  indonesia:{pm:'N/A (Presidential system)',president:'Prabowo Subianto (2024)',gdp:'$1.4 trillion (16th largest)',religion:'Islam (87%) — largest Muslim-majority country on Earth',natAnimal:'Komodo Dragon & Javan Rhino',natBird:'Javan Hawk-Eagle',natFlower:'Moon Orchid, Jasmine, Rafflesia',natSport:'Badminton',natTree:'Teak',anthem:'Indonesia Raya',independence:'17 August 1945 (from Netherlands)',famous:'Joko Widodo, Soekarno (founding president), Taufik Hidayat (badminton)',govt:'Presidential Republic',timezone:'UTC+7 to UTC+9 (3 time zones)',callingCode:'+62',internet:'.id',olympics:'Dominant in Badminton',food:'Nasi Goreng, Satay, Rendang, Gado-Gado, Martabak, Soto',landmark:'Borobudur Temple, Bali, Komodo Island, Raja Ampat'},
+  pakistan:{pm:'Shehbaz Sharif',president:'Asif Ali Zardari',gdp:'$375 billion',religion:'Islam (97%) — 2nd largest Muslim population on Earth',natAnimal:'Markhor',natBird:'Chukar Partridge',natFlower:'Jasmine',natSport:'Field Hockey (traditional), Cricket (most popular)',natTree:'Deodar Cedar',anthem:'Qaumi Taranah',independence:'14 August 1947 (from Britain)',famous:'Imran Khan, Malala Yousafzai, Wasim Akram, Nusrat Fateh Ali Khan, Jahangir Khan',govt:'Federal Parliamentary Republic',timezone:'PKT (UTC+5)',callingCode:'+92',internet:'.pk',olympics:'Won gold in Field Hockey multiple times',food:'Biryani, Nihari, Karahi, Chapli Kebab, Halwa Puri, Lassi',landmark:'Badshahi Mosque, Lahore Fort, Mohenjo-daro, K2 Base Camp'},
+  bangladesh:{pm:'Muhammad Yunus (interim, 2024)',president:'Mohammed Shahabuddin',gdp:'$460 billion',religion:'Islam (91%), Hinduism (8%)',natAnimal:'Royal Bengal Tiger',natBird:'Oriental Magpie-Robin',natFlower:'Water Lily (Shapla)',natSport:'Kabaddi (national), Cricket (most popular)',natTree:'Mango Tree',anthem:'Amar Sonar Bangla (written by Rabindranath Tagore)',independence:'26 March 1971 (from Pakistan)',famous:'Sheikh Mujibur Rahman, Muhammad Yunus (Nobel Peace Prize), Shakib Al Hasan',govt:'Parliamentary Republic',timezone:'BST (UTC+6)',callingCode:'+880',internet:'.bd',olympics:'Participates regularly; no medals yet',food:'Hilsa Fish Curry, Biryani, Panta Bhat, Mishti Doi, Pithas',landmark:'Sundarbans, Cox\'s Bazar (world\'s longest natural beach), Lalbagh Fort'},
+  nigeria:{pm:'N/A (Presidential system)',president:'Bola Tinubu',gdp:'$472 billion (largest in Africa)',religion:'Islam (53%), Christianity (46%)',natAnimal:'Eagle',natBird:'Black Crowned Crane',natFlower:'Costus spectabilis',natSport:'Football (Soccer)',natTree:'Iroko',anthem:'Arise, O Compatriots',independence:'1 October 1960 (from Britain)',famous:'Chinua Achebe, Wole Soyinka (Nobel Literature), Burna Boy, Wizkid, Davido, Ngozi Okonjo-Iweala',govt:'Federal Presidential Republic',timezone:'WAT (UTC+1)',callingCode:'+234',internet:'.ng',olympics:'1st African country to win Olympic gold (1996)',food:'Jollof Rice, Egusi Soup, Suya, Puff-puff, Akara, Ogi',landmark:'Zuma Rock, Yankari Game Reserve, Lekki Conservation Centre, Aso Rock'},
+  egypt:{pm:'Mostafa Madbouly',president:'Abdel Fattah el-Sisi',gdp:'$476 billion',religion:'Islam (90%), Christianity — Coptic (10%)',natAnimal:'Steppe Eagle',natBird:'Steppe Eagle',natFlower:'Egyptian Lotus',natSport:'Football (Soccer) & Squash',natTree:'Acacia',anthem:'Bilady, Bilady, Bilady',independence:'28 February 1922 (from Britain)',famous:'Naguib Mahfouz (Nobel Literature), Omar Sharif, Mo Salah, Cleopatra (ancient), Tutankhamun',govt:'Presidential Republic',timezone:'EET (UTC+2)',callingCode:'+20',internet:'.eg',olympics:'Strong in Weightlifting & Wrestling',food:'Koshari, Ful Medames, Hawawshi, Umm Ali, Basbousa, Karkade tea',landmark:'Pyramids of Giza, Sphinx, Luxor Temple, Valley of the Kings, Nile River'},
+  southafrica:{pm:'N/A (Presidential system)',president:'Cyril Ramaphosa',gdp:'$405 billion',religion:'Christianity (86%), No religion (6%)',natAnimal:'Springbok',natBird:'Blue Crane',natFlower:'King Protea',natSport:'Rugby Union',natTree:'Real Yellowwood',anthem:'Nkosi Sikelel\' iAfrika (God Bless Africa)',independence:'31 May 1910 (Union); 27 April 1994 (End of Apartheid)',famous:'Nelson Mandela, Desmond Tutu, Christiaan Barnard, Charlize Theron, Elon Musk (born here)',govt:'Presidential Republic',timezone:'SAST (UTC+2)',callingCode:'+27',internet:'.za',olympics:'Banned during apartheid; returned in 1992',food:'Braai (BBQ), Biltong, Bobotie, Bunny Chow, Milk Tart, Boerewors',landmark:'Table Mountain, Kruger National Park, Robben Island, Cape of Good Hope'},
+  kenya:{pm:'N/A (Presidential system)',president:'William Ruto',gdp:'$118 billion',religion:'Christianity (85%), Islam (11%)',natAnimal:'Lion',natBird:'Lilac-breasted Roller',natFlower:'Kenya Orchid',natSport:'Athletics (long distance running)',natTree:'Meru Oak',anthem:'Ee Mungu Nguvu Yetu',independence:'12 December 1963 (from Britain)',famous:'Eliud Kipchoge (marathon world record), Wangari Maathai (Nobel Peace), Ngugi wa Thiong\'o',govt:'Presidential Republic',timezone:'EAT (UTC+3)',callingCode:'+254',internet:'.ke',olympics:'Dominant in long-distance running',food:'Ugali, Nyama Choma, Sukuma Wiki, Githeri, Mandazi, Chai',landmark:'Maasai Mara, Mount Kenya, Amboseli, Nairobi National Park'},
+  ghana:{pm:'N/A (Presidential system)',president:'John Mahama',gdp:'$76 billion',religion:'Christianity (71%), Islam (20%)',natAnimal:'Golden Eagle',natBird:'Grey Crowned Crane',natFlower:'Impala Lily',natSport:'Football (Soccer)',natTree:'Cocoa Tree',anthem:'God Bless Our Homeland Ghana',independence:'6 March 1957 (first sub-Saharan African independence)',famous:'Kwame Nkrumah (founding father), Kofi Annan (UN Secretary General), Asamoah Gyan',govt:'Presidential Republic',timezone:'GMT (UTC+0)',callingCode:'+233',internet:'.gh',olympics:'Participates; boxing medals',food:'Jollof Rice, Fufu, Kelewele, Groundnut Soup, Waakye',landmark:'Cape Coast Castle, Lake Volta, Kakum National Park, Kumasi'},
+  ethiopia:{pm:'Abiy Ahmed (Nobel Peace Prize 2019)',president:'Sahle-Work Zewde (Africa\'s only female head of state)',gdp:'$156 billion',religion:'Christianity — Orthodox (44%), Islam (34%), Protestant (19%)',natAnimal:'Lion of Judah',natBird:'Blue-winged Goose',natFlower:'Calla Lily',natSport:'Long-distance Running',natTree:'Wanza',anthem:'Whedefit Gesgeshi Woude Henate Ethiopia',independence:'Never colonized (except brief Italian occupation 1936-41); oldest independent African state',famous:'Haile Selassie, Haile Gebrselassie, Kenenisa Bekele, Tirunesh Dibaba',govt:'Federal Parliamentary Republic',timezone:'EAT (UTC+3)',callingCode:'+251',internet:'.et',olympics:'Dominant in long-distance running; first African Olympic gold medal 1960',food:'Injera, Doro Wat, Kitfo, Tibs, Tej (honey wine), Bunna (coffee)',landmark:'Lalibela rock churches, Aksum obelisks, Danakil Depression, Simien Mountains'},
+  turkey:{pm:'N/A (Presidential system)',president:'Recep Tayyip Erdoğan',gdp:'$1.1 trillion',religion:'Islam (99%) — mostly Sunni',natAnimal:'Grey Wolf',natBird:'Redwing',natFlower:'Tulip (originated in Turkey, not Netherlands!)',natSport:'Oil Wrestling (Yağlı Güreş)',natTree:'Turkey Oak',anthem:'İstiklâl Marşı (Independence March)',independence:'29 October 1923 (Republic founded by Atatürk)',famous:'Mustafa Kemal Atatürk, Orhan Pamuk (Nobel Literature), Tarkan',govt:'Presidential Republic',timezone:'TRT (UTC+3)',callingCode:'+90',internet:'.tr',olympics:'Strong in Weightlifting & Wrestling',food:'Döner Kebab, Baklava, Meze, Turkish Delight, Borek, Ayran',landmark:'Hagia Sophia, Blue Mosque, Cappadocia, Ephesus, Pamukkale'},
+  iran:{pm:'N/A (Supreme Leader system)',president:'Masoud Pezeshkian (2024)',gdp:'$366 billion',religion:'Islam (99%) — Shia (90%), Sunni (9%)',natAnimal:'Asiatic Cheetah (critically endangered)',natBird:'Common Nightingale',natFlower:'Red Rose',natSport:'Freestyle Wrestling',natTree:'Cypress',anthem:'Soroud-e Melli-e Jomhouri-e Eslami-e Iran',independence:'1 April 1979 (Islamic Republic)',famous:'Omar Khayyam, Rumi (poet), Cyrus the Great (ancient), Maryam Mirzakhani (Fields Medal)',govt:'Islamic Republic (Theocratic-Republican hybrid)',timezone:'IRST (UTC+3:30)',callingCode:'+98',internet:'.ir',olympics:'Strong in Wrestling & Weightlifting',food:'Chelo Kabab, Ghormeh Sabzi, Fesenjan, Ash Reshteh, Persian rice',landmark:'Persepolis, Isfahan\'s Naqsh-e Jahan Square, Golestan Palace, Dasht-e Kavir desert'},
+  saudiarabia:{pm:'Crown Prince Mohammed bin Salman (de facto PM)',president:'N/A — Absolute Monarchy; King Salman bin Abdulaziz Al Saud',gdp:'$1.1 trillion',religion:'Islam (100%) — Islam\'s holiest land with Mecca & Medina',natAnimal:'Arabian Camel',natBird:'Saker Falcon',natFlower:'Arabian Coffee (Coffea arabica)',natSport:'Falconry & Football',natTree:'Date Palm',anthem:'An-Nasheed al-Watani',independence:'23 September 1932',famous:'King Salman, Crown Prince MBS, Aramco (world\'s most profitable company)',govt:'Absolute Monarchy (Islamic)',timezone:'AST (UTC+3)',callingCode:'+966',internet:'.sa',olympics:'Growing participation; hosted first women athletes in 2012',food:'Kabsa, Mandi, Jareesh, Mutabbaq, Harees, Dates & Qahwa coffee',landmark:'Mecca (Kaaba), Medina, Diriyah, Edge of the World cliff, Al-Ula'},
+  uae:{pm:'Sheikh Mohammed bin Rashid Al Maktoum (also Ruler of Dubai)',president:'Sheikh Mohamed bin Zayed Al Nahyan (President & Ruler of Abu Dhabi)',gdp:'$509 billion',religion:'Islam (76%), Christianity (9%)',natAnimal:'Arabian Oryx',natBird:'Peregrine Falcon',natFlower:'Tribulus omanense',natSport:'Camel Racing & Falconry',natTree:'Ghaf Tree',anthem:'Ishy Bilady',independence:'2 December 1971',famous:'Sheikh Zayed bin Sultan Al Nahyan (founding father), Mohammed Al Maktoum',govt:'Federal Constitutional Monarchy (7 Emirates)',timezone:'GST (UTC+4)',callingCode:'+971',internet:'.ae',olympics:'Growing; hosted Expo 2020',food:'Al Harees, Camel meat, Machboos, Luqaimat, Karak Chai',landmark:'Burj Khalifa, Burj Al Arab, Sheikh Zayed Grand Mosque, Palm Jumeirah, Dubai Mall'},
+  singapore:{pm:'Lawrence Wong (2024)',president:'Tharman Shanmugaratnam',gdp:'$501 billion (per capita one of world\'s highest)',religion:'Buddhism (31%), Christianity (19%), Islam (16%), Taoism (9%)',natAnimal:'Lion (Merlion symbol)',natBird:'Crimson Sunbird',natFlower:'Vanda Miss Joaquim (Orchid)',natSport:'Sailing & Swimming',natTree:'Tembusu',anthem:'Majulah Singapura (Onward Singapore)',independence:'9 August 1965 (from Malaysia)',famous:'Lee Kuan Yew (founding PM), Goh Chok Tong, Joseph Schooling (Olympic gold swimming)',govt:'Parliamentary Republic',timezone:'SGT (UTC+8)',callingCode:'+65',internet:'.sg',olympics:'Gold medal in swimming (2016)',food:'Chicken Rice, Chili Crab, Laksa, Char Kway Teow, Kaya Toast, Teh Tarik',landmark:'Marina Bay Sands, Gardens by the Bay, Sentosa, Changi Airport, Little India'},
+  israel:{pm:'Benjamin Netanyahu',president:'Isaac Herzog',gdp:'$540 billion',religion:'Judaism (75%), Islam (18%), Christianity (2%)',natAnimal:'Hoopoe Bird (chosen by public vote)',natBird:'Hoopoe',natFlower:'Cyclamen',natSport:'Football & Basketball',natTree:'Olive Tree',anthem:'Hatikvah (The Hope)',independence:'14 May 1948',famous:'David Ben-Gurion (founding PM), Golda Meir, Albert Einstein (held Israeli citizenship), Gal Gadot',govt:'Parliamentary Republic',timezone:'IST (UTC+2)',callingCode:'+972',internet:'.il',olympics:'Several medals; Judo & Athletics dominant',food:'Hummus, Falafel, Shakshuka, Sabich, Babaganoush, Matzah Ball Soup',landmark:'Western Wall, Dome of the Rock, Dead Sea, Masada, Tel Aviv beaches'},
+  greece:{pm:'Kyriakos Mitsotakis',president:'Katerina Sakellaropoulou (first female president)',gdp:'$240 billion',religion:'Christianity — Greek Orthodox (90%)',natAnimal:'Dolphin',natBird:'Little Owl',natFlower:'Violet & Laurel',natSport:'Water Polo & Football',natTree:'Olive Tree',anthem:'Hymn to Liberty (world\'s longest national anthem — 158 stanzas!)',independence:'25 March 1821 (from Ottoman Empire)',famous:'Aristotle, Plato, Socrates, Alexander the Great, Nikos Kazantzakis, Maria Callas',govt:'Parliamentary Republic',timezone:'EET (UTC+2)',callingCode:'+30',internet:'.gr',olympics:'Host of first modern Olympics in 1896; hosted again in 2004',food:'Moussaka, Souvlaki, Gyros, Spanakopita, Baklava, Greek Salad, Ouzo',landmark:'Acropolis & Parthenon, Santorini, Mykonos, Delphi, Olympia'},
+  ukraine:{pm:'Denys Shmyhal',president:'Volodymyr Zelenskyy',gdp:'$200 billion (pre-war)',religion:'Christianity — Ukrainian Orthodox (80%)',natAnimal:'Common Nightingale',natBird:'White Stork',natFlower:'Sunflower',natSport:'Football & Boxing',natTree:'Guelder Rose (Kalyna)',anthem:'Shche ne vmerla Ukrainy',independence:'24 August 1991 (from USSR)',famous:'Volodymyr Zelenskyy, Vitali Klitschko, Wladimir Klitschko, Shevchenko (footballer & poet)',govt:'Semi-Presidential Republic',timezone:'EET (UTC+2)',callingCode:'+380',internet:'.ua',olympics:'Strong in Boxing, Wrestling & Gymnastics',food:'Borscht, Varenyky, Chicken Kyiv, Pampushky, Salo, Horilka (vodka)',landmark:'Kyiv Pechersk Lavra (Monastery of the Caves), St Sophia Cathedral, Odessa'},
+  poland:{pm:'Donald Tusk',president:'Andrzej Duda',gdp:'$815 billion',religion:'Christianity — Catholic (87%)',natAnimal:'White-tailed Eagle',natBird:'White-tailed Eagle',natFlower:'Red Poppy & Cornflower',natSport:'Football & Volleyball',natTree:'Oak',anthem:'Mazurek Dąbrowskiego (Dąbrowski\'s Mazurka)',independence:'11 November 1918 (restoration)',famous:'Frederic Chopin, Marie Curie, Copernicus, John Paul II (Pope), Robert Lewandowski',govt:'Parliamentary Republic',timezone:'CET (UTC+1)',callingCode:'+48',internet:'.pl',olympics:'Strong in Boxing, Athletics & Weightlifting',food:'Pierogi, Bigos, Żurek, Kiełbasa, Gołąbki, Oscypek cheese',landmark:'Wawel Castle, Wieliczka Salt Mine, Auschwitz Memorial, Warsaw Old Town'},
+  nepal:{pm:'KP Sharma Oli',president:'Ram Chandra Paudel',gdp:'$40 billion',religion:'Hinduism (81%), Buddhism (9%)',natAnimal:'Cow (sacred)',natBird:'Himalayan Monal (Danphe)',natFlower:'Rhododendron (Laliguras)',natSport:'Volleyball (national), Football (popular)',natTree:'Peepal (Bodhi) Tree',anthem:'Sayaun Thunga Phool Ka',independence:'Never colonized; unified as kingdom in 1768',famous:'Tenzing Norgay Sherpa (first Everest summit), Gautam Buddha (born in Lumbini)',govt:'Federal Democratic Republic',timezone:'NPT (UTC+5:45) — unique 45-min offset!',callingCode:'+977',internet:'.np',olympics:'Participates since 1964',food:'Dal Bhat, Momos (dumplings), Thukpa, Sel Roti, Tongba',landmark:'Mount Everest, Lumbini (Buddha\'s birthplace), Pashupatinath Temple, Pokhara'},
+  newzealand:{pm:'Christopher Luxon',president:'N/A — Constitutional Monarchy; King Charles III',gdp:'$249 billion',religion:'No religion (49%), Christianity (37%)',natAnimal:'Kiwi Bird',natBird:'Kiwi',natFlower:'Kōwhai',natSport:'Rugby Union (All Blacks = world\'s greatest rugby team)',natTree:'Kauri',anthem:'God Defend New Zealand / God Save the King (two official)',independence:'26 September 1907',famous:'Sir Edmund Hillary (first Everest summit), Peter Jackson, Lorde, Jacinda Ardern',govt:'Parliamentary Constitutional Monarchy',timezone:'NZST (UTC+12)',callingCode:'+64',internet:'.nz',olympics:'Strong in Rowing & Athletics',food:'Pavlova, Hangi, Fish & Chips, Lamingtons, L&P drink, Hokey Pokey ice cream',landmark:'Milford Sound, Hobbiton, Rotorua geothermal, Sky Tower Auckland'},
+  vietnam:{pm:'Pham Minh Chinh',president:'To Lam (2024)',gdp:'$430 billion',religion:'No religion (85%), Buddhism (8%), Christianity (7%)',natAnimal:'Water Buffalo',natBird:'Vietnamese Pheasant',natFlower:'Lotus',natSport:'Football & Martial Arts',natTree:'Bamboo',anthem:'Tiến Quân Ca (Army March)',independence:'2 September 1945 (from France)',famous:'Ho Chi Minh (founding father), Nguyen Du (poet), Viet Thanh Nguyen',govt:'One-party Socialist Republic',timezone:'ICT (UTC+7)',callingCode:'+84',internet:'.vn',olympics:'Growing; first gold medal in shooting at 2016',food:'Pho, Banh Mi, Bun Bo Hue, Banh Xeo, Com Tam, Ca Phe Trung (egg coffee)',landmark:'Ha Long Bay, Hoi An Ancient Town, Hue Citadel, Phong Nha Caves, Ho Chi Minh City'},
+  malaysia:{pm:'Anwar Ibrahim',president:'Sultan Ibrahim (King, Yang di-Pertuan Agong)',gdp:'$430 billion',religion:'Islam (63%), Buddhism (19%), Christianity (9%), Hinduism (6%)',natAnimal:'Malayan Tiger',natBird:'Rhinoceros Hornbill',natFlower:'Hibiscus (Bunga Raya)',natSport:'Badminton & Football',natTree:'Merbau',anthem:'Negaraku',independence:'31 August 1957 (from Britain)',famous:'Mahathir Mohamad, Lee Chong Wei (badminton), Michelle Yeoh (actress)',govt:'Federal Constitutional Monarchy',timezone:'MYT (UTC+8)',callingCode:'+60',internet:'.my',olympics:'Strong in Badminton & Cycling',food:'Nasi Lemak, Rendang, Char Kway Teow, Roti Canai, Teh Tarik, Durian',landmark:'Petronas Twin Towers, Batu Caves, Langkawi, Mount Kinabalu'},
+  thailand:{pm:'Paetongtarn Shinawatra (2024)',president:'N/A — Constitutional Monarchy; King Vajiralongkorn (Rama X)',gdp:'$574 billion',religion:'Buddhism (95%) — one of the world\'s most Buddhist nations',natAnimal:'Thai Elephant',natBird:'Siamese Fireback',natFlower:'Ratchaphruek (Golden Shower)',natSport:'Muay Thai (Thai Boxing)',natTree:'Ratchaphruek',anthem:'Phleng Chat Thai',independence:'Never colonized; one of the few Asian nations to remain independent',famous:'King Bhumibol Adulyadej (longest reigning king), Tony Jaa (Muay Thai actor)',govt:'Constitutional Monarchy',timezone:'ICT (UTC+7)',callingCode:'+66',internet:'.th',olympics:'Strong in Boxing & Taekwondo',food:'Pad Thai, Tom Yum Soup, Green Curry, Som Tam, Mango Sticky Rice, Thai Iced Tea',landmark:'Wat Phra Kaew (Temple of the Emerald Buddha), Phi Phi Islands, Ayutthaya, Chiang Mai'},
+  argentina:{pm:'N/A (Presidential system)',president:'Javier Milei (2023)',gdp:'$622 billion',religion:'Christianity — Catholic (67%)',natAnimal:'Rufous Hornero (bird)',natBird:'Rufous Hornero',natFlower:'Ceibo',natSport:'Football (Soccer)',natTree:'Ceibo',anthem:'Himno Nacional Argentino',independence:'9 July 1816 (from Spain)',famous:'Lionel Messi, Diego Maradona, Che Guevara, Jorge Luis Borges, Pope Francis',govt:'Federal Presidential Republic',timezone:'ART (UTC-3)',callingCode:'+54',internet:'.ar',olympics:'Gold in Football, Hockey & Boxing',food:'Asado (BBQ), Empanadas, Chimichurri, Dulce de Leche, Yerba Mate, Alfajores',landmark:'Buenos Aires (Paris of South America), Iguazu Falls, Patagonia, Perito Moreno Glacier'},
+  colombia:{pm:'N/A (Presidential system)',president:'Gustavo Petro (first leftist president)',gdp:'$363 billion',religion:'Christianity — Catholic (79%)',natAnimal:'Andean Condor',natBird:'Andean Condor',natFlower:'Christmas Orchid (Cattleya trianae)',natSport:'Football & Cycling',natTree:'Wax Palm',anthem:'Oh Gloria Inmarcesible!',independence:'20 July 1810 (from Spain)',famous:'Gabriel García Márquez (Nobel Literature), Shakira, James Rodríguez, Carlos Valderrama',govt:'Presidential Republic',timezone:'COT (UTC-5)',callingCode:'+57',internet:'.co',olympics:'Growing; Cycling & Judo medals',food:'Bandeja Paisa, Ajiaco, Empanadas, Sancocho, Arepas, Aguardiente',landmark:'Cartagena old city, Coffee Triangle, Caño Cristales (river of five colors), Amazon jungle'},
+  peru:{pm:'Gustavo Adrianzén',president:'Dina Boluarte',gdp:'$242 billion',religion:'Christianity — Catholic (78%)',natAnimal:'Vicuña',natBird:'Andean Cock-of-the-rock',natFlower:'Cantuta',natSport:'Football & Volleyball',natTree:'Cinchona (Quina)',anthem:'Himno Nacional del Perú',independence:'28 July 1821 (from Spain)',famous:'Mario Vargas Llosa (Nobel Literature), Paddington Bear (fictional, from Darkest Peru!)',govt:'Presidential Republic',timezone:'PET (UTC-5)',callingCode:'+51',internet:'.pe',olympics:'Growing participation',food:'Ceviche, Lomo Saltado, Causa, Anticucho, Pisco Sour, Quinoa',landmark:'Machu Picchu, Nazca Lines, Lake Titicaca, Amazon River source, Chan Chan'},
+  chile:{pm:'N/A (Presidential system)',president:'Gabriel Boric (youngest Chilean president)',gdp:'$317 billion',religion:'Christianity — Catholic (45%), Evangelical (16%), No religion (35%)',natAnimal:'Huemul Deer & Condor',natBird:'Andean Condor',natFlower:'Copihue (Chilean Bellflower)',natSport:'Football & Tennis',natTree:'Araucaria (Monkey Puzzle)',anthem:'Himno Nacional de Chile',independence:'18 September 1810 (from Spain)',famous:'Pablo Neruda (Nobel Literature), Gabriela Mistral (1st Latin American Nobel Literature), Alexis Sanchez',govt:'Presidential Republic',timezone:'CLT (UTC-3)',callingCode:'+56',internet:'.cl',olympics:'Tennis gold medals',food:'Empanadas, Cazuela, Curanto, Pastel de Choclo, Pisco Sour, Completo (hot dog)',landmark:'Atacama Desert, Torres del Paine, Easter Island, Patagonia, Valle de la Luna'},
+  australia_extra:{},  // already done above
+  sweden:{pm:'Ulf Kristersson',president:'N/A — Constitutional Monarchy; King Carl XVI Gustaf',gdp:'$585 billion',religion:'Christianity — Lutheran (57%), No religion (35%)',natAnimal:'Elk (Moose)',natBird:'Common Blackbird (unofficial)',natFlower:'Linnaea borealis',natSport:'Football & Ice Hockey',natTree:'Birch',anthem:'Du Gamla, Du Fria',independence:'6 June 1523 (Gustav Vasa crowned)',famous:'ABBA, Avicii, Zlatan Ibrahimovic, Greta Thunberg, Ingmar Bergman, Alfred Nobel',govt:'Constitutional Monarchy & Parliamentary Democracy',timezone:'CET (UTC+1)',callingCode:'+46',internet:'.se',olympics:'Strong historically in Athletics & Winter sports',food:'Meatballs & Lingonberry, Gravlax, Surströmming, Cinnamon Buns, IKEA food',landmark:'ABBA Museum, Vasa Museum, Gamla Stan (Old Town), Northern Lights, Viking runestones'},
+  netherlands:{pm:'Dick Schoof (2024)',president:'N/A — Constitutional Monarchy; King Willem-Alexander',gdp:'$1.1 trillion',religion:'No religion (50%), Christianity (37%), Islam (5%)',natAnimal:'Lion',natBird:'Black-tailed Godwit',natFlower:'Tulip',natSport:'Football & Cycling',natTree:'Linden',anthem:'Wilhelmus (world\'s oldest national anthem, written ~1568)',independence:'26 July 1581',famous:'Rembrandt, Vincent van Gogh, Spinoza, Anne Frank, Johan Cruyff, Max Verstappen',govt:'Constitutional Monarchy & Parliamentary Democracy',timezone:'CET (UTC+1)',callingCode:'+31',internet:'.nl',olympics:'Strong in Cycling, Speed Skating & Hockey',food:'Stroopwafels, Bitterballen, Herring, Dutch Cheese (Gouda, Edam), Poffertjes, Frites with Mayo',landmark:'Anne Frank House, Rijksmuseum, Keukenhof tulip garden, Windmills of Kinderdijk'},
+  switzerland:{pm:'Karin Keller-Sutter (Federal President 2025, rotates annually)',president:'Federal Council (7 members — no single president)',gdp:'$884 billion',religion:'Christianity (62%), No religion (27%)',natAnimal:'Cow (culturally) & Alpine Ibex',natBird:'Common Raven (unofficial)',natFlower:'Edelweiss & Alpine Rose',natSport:'Tennis & Skiing',natTree:'Spruce',anthem:'Swiss Psalm',independence:'1 August 1291 (founding of Swiss Confederation)',famous:'Roger Federer, Martina Hingis, Jean-Jacques Rousseau, Le Corbusier, William Tell (legendary)',govt:'Federal Council (direct democracy with referendums)',timezone:'CET (UTC+1)',callingCode:'+41',internet:'.ch',olympics:'Strong in Skiing & Tennis; Lausanne is HQ of International Olympic Committee',food:'Fondue, Raclette, Rösti, Bircher Muesli, Swiss Chocolate, Graubünden meat',landmark:'Matterhorn, Lake Geneva, Château de Chillon, Lucerne Chapel Bridge, Jungfrau'},
+};
+
+// Merge DEEP into EDU_DATA
+Object.entries(DEEP).forEach(([k,v])=>{if(EDU_DATA[k])Object.assign(EDU_DATA[k],v);});
+// Also map southkorea alias
+if(DEEP.south_korea&&EDU_DATA.southkorea)Object.assign(EDU_DATA.southkorea,DEEP.south_korea);
+
+// Unknown questions log
+const UNKNOWN_LOG=[];
+function logUnknown(q){
+  UNKNOWN_LOG.push({q,time:new Date().toLocaleTimeString()});
+  const el=document.getElementById('gl-log');
+  if(!el)return;
+  el.style.display='block';
+  const body=el.querySelector('#gl-log-body');
+  if(body){
+    body.innerHTML=UNKNOWN_LOG.slice(-8).reverse().map(e=>
+      `<div class="log-item">❓ ${e.q}<span class="log-time">${e.time}</span></div>`
+    ).join('');
+  }
+}
+
+// Show text on screen
+function voiceFeedback(msg){
+  const el=document.getElementById('gl-vfb');
+  el.textContent=msg;el.style.display='block';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',4500);
+}
+
+// Speak aloud AND show on screen
+function jarvisSpeak(spokenText, displayText){
+  voiceFeedback(displayText||spokenText);
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const say=()=>{
+    const utt=new SpeechSynthesisUtterance(spokenText);
+    const voices=window.speechSynthesis.getVoices();
+    const pick=voices.find(v=>['Google UK English Male','Microsoft David','Daniel','Alex'].some(n=>v.name.includes(n)))
+               ||voices.find(v=>v.lang==='en-GB')
+               ||voices.find(v=>v.lang.startsWith('en'));
+    if(pick)utt.voice=pick;
+    utt.pitch=0.92; utt.rate=1.05; utt.volume=1.0;
+    window.speechSynthesis.speak(utt);
+  };
+  // voices may not be loaded yet on first call
+  if(window.speechSynthesis.getVoices().length)say();
+  else window.speechSynthesis.onvoiceschanged=()=>{say();window.speechSynthesis.onvoiceschanged=null;};
+}
+
+function closeEdu(){document.getElementById('gl-edu').style.display='none'}
+
+function showEdu(name){
+  const key=name.toLowerCase().replace(/[\s-]/g,'');
+  const data=EDU_DATA[key];
+  if(!data)return;
+  const el=document.getElementById('gl-edu');
+  document.getElementById('gl-edu-title').textContent=(key==='usa'?'USA':key==='uk'?'UK':key==='uae'?'UAE':name).toUpperCase();
+  let html=`📍 <b>Capital:</b> ${data.capital}<br>`+
+    `👥 <b>Population:</b> ${data.pop||'—'}<br>`+
+    `🗣️ <b>Language:</b> ${data.lang||'—'}<br>`+
+    `💰 <b>Currency:</b> ${data.currency||'—'}<br>`+
+    `📐 <b>Area:</b> ${data.area||'—'}<br>`+
+    `🌍 <b>Continent:</b> ${data.continent||'—'}<br>`;
+  if(data.pm)html+=`🏛️ <b>Prime Minister:</b> ${data.pm}<br>`;
+  if(data.president)html+=`👑 <b>Head of State:</b> ${data.president}<br>`;
+  if(data.gdp)html+=`💹 <b>GDP:</b> ${data.gdp}<br>`;
+  if(data.religion)html+=`🙏 <b>Religion:</b> ${data.religion}<br>`;
+  if(data.natAnimal)html+=`🐾 <b>National Animal:</b> ${data.natAnimal}<br>`;
+  if(data.natBird)html+=`🐦 <b>National Bird:</b> ${data.natBird}<br>`;
+  if(data.natFlower)html+=`🌸 <b>National Flower:</b> ${data.natFlower}<br>`;
+  if(data.natSport)html+=`⚽ <b>National Sport:</b> ${data.natSport}<br>`;
+  if(data.anthem)html+=`🎵 <b>Anthem:</b> ${data.anthem}<br>`;
+  if(data.independence)html+=`🗓️ <b>Independence:</b> ${data.independence}<br>`;
+  if(data.famous)html+=`⭐ <b>Famous People:</b> ${data.famous}<br>`;
+  if(data.food)html+=`🍽️ <b>Famous Food:</b> ${data.food}<br>`;
+  if(data.landmark)html+=`🗺️ <b>Landmarks:</b> ${data.landmark}<br>`;
+  html+=`<br>📖 ${data.fact}`;
+  document.getElementById('gl-edu-body').innerHTML=html;
+  el.style.display='block';
+}
+
+function latLonToVec3(lat,lon,r){
+  const phi=(90-lat)*Math.PI/180;
+  const theta=(lon+180)*Math.PI/180;
+  return new THREE.Vector3(-Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)).multiplyScalar(r);
+}
+
+function flyToCountry(name){
+  const key=name.toLowerCase().replace(/[\s-]/g,'');
+  const coords=COUNTRIES[key];
+  if(!coords){voiceFeedback('COUNTRY NOT FOUND: '+name.toUpperCase());return}
+  const [lat,lon]=coords;
+  voiceFeedback('FLYING TO: '+name.toUpperCase());
+  // Stop spinning
+  glAutoSpin=0;glIsHeld=false;
+  const targetRotY=(-lon-180)*Math.PI/180;
+  const targetRotX=(-lat)*Math.PI/180;
+  let frames=0;
+  const startY=glGlobeGroup.rotation.y;
+  const startX=glGlobeGroup.rotation.x;
+  const ani=()=>{
+    frames++;
+    const t=Math.min(1,frames/90);
+    const ease=1-Math.pow(1-t,3);
+    glGlobeGroup.rotation.y=startY+(targetRotY-startY)*ease;
+    glGlobeGroup.rotation.x=startX+(targetRotX-startX)*ease;
+    if(t<1)requestAnimationFrame(ani);
+    else showEdu(name);
+  };
+  requestAnimationFrame(ani);
+}
+
+let glExplodeAnimFrame=null;
+let glFragments=[];
+
+function explodeGlobe(){
+  if(glIsExploded)return;
+  glIsExploded=true;glAutoSpin=0;
+  voiceFeedback('💥 INITIATING EXPLOSION...');
+  if(glExplodeAnimFrame)cancelAnimationFrame(glExplodeAnimFrame);
+
+  // Hide original globe group
+  glGlobeGroup.visible=false;
+
+  // Create hundreds of tiny fragment pieces
+  const fragmentGeo=new THREE.TetrahedronGeometry(0.035,0);
+  const numFragments=280;
+  glFragments=[];
+
+  for(let i=0;i<numFragments;i++){
+    // Random position ON sphere surface
+    const theta=Math.random()*Math.PI*2;
+    const phi=Math.acos(2*Math.random()-1);
+    const r=0.9+Math.random()*0.15;
+
+    const hue=Math.random()<0.6?0.05:0.55; // red/orange or blue (earth colors)
+    const sat=0.6+Math.random()*0.4;
+    const color=new THREE.Color().setHSL(hue,sat,0.4+Math.random()*0.3);
+
+    const mat=new THREE.MeshPhongMaterial({color,emissive:color,emissiveIntensity:0.2,transparent:true,opacity:1});
+    const mesh=new THREE.Mesh(fragmentGeo,mat);
+
+    // Start position on sphere
+    mesh.position.set(
+      r*Math.sin(phi)*Math.cos(theta),
+      r*Math.cos(phi),
+      r*Math.sin(phi)*Math.sin(theta)
+    );
+    mesh.rotation.set(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2);
+
+    // Velocity: outward burst + random spread
+    const speed=0.04+Math.random()*0.09;
+    const vx=mesh.position.x*speed+(Math.random()-.5)*0.04;
+    const vy=mesh.position.y*speed+(Math.random()-.5)*0.04;
+    const vz=mesh.position.z*speed+(Math.random()-.5)*0.04;
+
+    glScene.add(mesh);
+    glFragments.push({mesh,vx,vy,vz,rx:(Math.random()-.5)*0.25,ry:(Math.random()-.5)*0.25,rz:(Math.random()-.5)*0.25,life:1});
+  }
+
+  let expFrame=0;
+  const animateExplode=()=>{
+    expFrame++;
+    glFragments.forEach(f=>{
+      // Initial burst — fast
+      const drag=expFrame<30?1:0.96;
+      f.vx*=drag;f.vy*=drag;f.vz*=drag;
+      // Gravity pull down
+      f.vy-=0.0003;
+      f.mesh.position.x+=f.vx;
+      f.mesh.position.y+=f.vy;
+      f.mesh.position.z+=f.vz;
+      f.mesh.rotation.x+=f.rx;
+      f.mesh.rotation.y+=f.ry;
+      f.mesh.rotation.z+=f.rz;
+      // Fade out after burst
+      if(expFrame>60){
+        f.mesh.material.opacity=Math.max(0,f.mesh.material.opacity-0.003);
+        f.mesh.rotation.x+=f.rx*0.2;f.mesh.rotation.y+=f.ry*0.2;
+      }
+    });
+    if(glIsExploded)glExplodeAnimFrame=requestAnimationFrame(animateExplode);
+  };
+  glExplodeAnimFrame=requestAnimationFrame(animateExplode);
+}
+
+function rearrangeGlobe(){
+  if(!glIsExploded){voiceFeedback('GLOBE ALREADY INTACT');return}
+  voiceFeedback('🔄 REARRANGING...');
+  if(glExplodeAnimFrame)cancelAnimationFrame(glExplodeAnimFrame);
+
+  // Remove fragments
+  glFragments.forEach(f=>glScene.remove(f.mesh));
+  glFragments=[];
+
+  // Show globe again
+  glGlobeGroup.visible=true;
+  glIsExploded=false;
+  glAutoSpin=0.002;
+  voiceFeedback('✅ GLOBE RESTORED');
+}
+
+async function initGlobe(){
+  glHandVid=document.getElementById('gl-vid');
+  glHandCv=document.getElementById('gl-ov');
+  glHandCtx=glHandCv.getContext('2d');
+  glHandCv.width=155;glHandCv.height=115;
+
+  const wrap=document.getElementById('gl-wrap');
+  const W=wrap.offsetWidth,H=wrap.offsetHeight;
+
+  glScene=new THREE.Scene();
+  glCamera=new THREE.PerspectiveCamera(40,W/H,0.1,1000);
+  glCamera.position.z=3;
+
+  glRenderer=new THREE.WebGLRenderer({canvas:document.getElementById('gl-cv'),antialias:true,alpha:false});
+  glRenderer.setSize(W,H);glRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  glRenderer.setClearColor(0x000810,1);
+
+  new ResizeObserver(()=>{
+    const W2=wrap.offsetWidth,H2=wrap.offsetHeight;
+    glCamera.aspect=W2/H2;glCamera.updateProjectionMatrix();glRenderer.setSize(W2,H2);
+  }).observe(wrap);
+
+  glGlobeGroup=new THREE.Group();glScene.add(glGlobeGroup);
+
+  // ── Paint real Earth texture on canvas ──
+  const TEX_W=2048,TEX_H=1024;
+  const tc=document.createElement('canvas');tc.width=TEX_W;tc.height=TEX_H;
+  const tctx=tc.getContext('2d');
+
+  // Ocean
+  const oceanG=tctx.createLinearGradient(0,0,0,TEX_H);
+  oceanG.addColorStop(0,'#001a3a');oceanG.addColorStop(0.3,'#002855');oceanG.addColorStop(0.7,'#002244');oceanG.addColorStop(1,'#001a3a');
+  tctx.fillStyle=oceanG;tctx.fillRect(0,0,TEX_W,TEX_H);
+
+  // Helper: paint a continent shape
+  function paintContinent(regions,color){
+    tctx.fillStyle=color;
+    regions.forEach(r=>{
+      tctx.beginPath();
+      r.forEach(([lon,lat],i)=>{
+        const x=((lon+180)/360)*TEX_W,y=((90-lat)/180)*TEX_H;
+        i===0?tctx.moveTo(x,y):tctx.lineTo(x,y);
+      });
+      tctx.closePath();tctx.fill();
+    });
+  }
+
+  const land='#1a4a1a',land2='#1e5a1e',desert='#8b6914',snow='#e8e8e8';
+
+  // North America
+  paintContinent([[[-170,70],[-60,70],[-50,60],[-55,45],[-70,40],[-75,25],[-85,20],[-90,15],[-78,8],[-77,8],[-80,5],[-105,5],[-120,20],[-117,32],[-125,48],[-137,58],[-145,60],[-155,58],[-165,65],[-168,70]]],land);
+  // Greenland
+  paintContinent([[[-75,83],[-10,83],[-15,70],[-25,65],[-45,58],[-60,63],[-70,72],[-75,83]]],snow);
+  // South America
+  paintContinent([[[-80,12],[-60,12],[-50,5],[-35,-5],[-35,-20],[-40,-30],[-60,-55],[-70,-55],[-75,-50],[-80,-40],[-75,-20],[-80,-5],[-78,5],[-78,12]]],land2);
+  // Europe
+  paintContinent([[[-10,35],[0,35],[10,38],[15,36],[25,35],[30,40],[35,45],[30,50],[25,55],[30,65],[25,70],[10,63],[0,55],[-5,48],[-10,44],[-10,35]]],land);
+  // UK/Ireland
+  paintContinent([[[-8,50],[-5,58],[-2,60],[0,58],[2,55],[0,52],[-3,50],[-6,52],[-8,50]]],land);
+  // Africa
+  paintContinent([[[-18,15],[-10,5],[0,5],[10,5],[15,0],[40,-5],[50,10],[45,15],[42,12],[40,20],[37,22],[35,22],[30,30],[32,31],[35,22],[42,12],[50,10],[50,15],[45,25],[40,20],[15,35],[10,37],[0,35],[-5,35],[-18,15]]],land2);
+  // Make Africa bigger and better
+  tctx.fillStyle=land2;
+  tctx.beginPath();
+  const afPts=[[-18,15],[-5,5],[5,5],[20,-5],[35,-5],[45,5],[50,12],[40,22],[37,30],[32,31],[30,30],[25,37],[15,37],[0,35],[-18,15]];
+  afPts.forEach(([lon,lat],i)=>{const x=((lon+180)/360)*TEX_W,y=((90-lat)/180)*TEX_H;i===0?tctx.moveTo(x,y):tctx.lineTo(x,y)});
+  tctx.closePath();tctx.fill();
+  // Sahara
+  tctx.fillStyle=desert;
+  tctx.beginPath();
+  [[-18,30],[-5,25],[15,20],[35,22],[35,30],[15,35],[0,35],[-18,30]].forEach(([lon,lat],i)=>{const x=((lon+180)/360)*TEX_W,y=((90-lat)/180)*TEX_H;i===0?tctx.moveTo(x,y):tctx.lineTo(x,y)});
+  tctx.closePath();tctx.fill();
+  // Arabia
+  paintContinent([[[36,30],[56,22],[58,14],[50,12],[42,12],[40,20],[38,28],[36,30]]],desert);
+  // Asia
+  paintContinent([[[26,40],[40,38],[55,22],[65,22],[70,20],[80,10],[95,5],[110,1],[120,5],[130,32],[140,40],[145,45],[135,55],[130,65],[100,70],[80,73],[60,73],[50,70],[40,65],[35,60],[30,50],[26,40]]],land);
+  // India
+  paintContinent([[[68,35],[78,35],[90,28],[90,20],[80,8],[72,8],[68,22],[65,28],[68,35]]],land2);
+  // Southeast Asia
+  paintContinent([[[95,28],[105,20],[112,5],[120,5],[130,10],[125,15],[115,20],[105,22],[95,28]]],land2);
+  // Japan
+  paintContinent([[[130,31],[132,33],[138,38],[141,40],[143,44],[145,44],[141,38],[135,35],[130,31]]],land);
+  // Australia
+  paintContinent([[[115,-35],[125,-33],[135,-34],[145,-38],[155,-28],[150,-22],[136,-15],[130,-15],[120,-22],[115,-35]]],desert);
+  tctx.fillStyle=land2;
+  tctx.beginPath();
+  [[115,-35],[125,-33],[138,-34],[145,-38],[150,-30],[145,-22],[135,-15],[130,-15],[122,-22],[115,-30],[115,-35]].forEach(([lon,lat],i)=>{const x=((lon+180)/360)*TEX_W,y=((90-lat)/180)*TEX_H;i===0?tctx.moveTo(x,y):tctx.lineTo(x,y)});
+  tctx.closePath();tctx.fill();
+  // New Zealand
+  paintContinent([[[166,-47],[170,-43],[174,-37],[172,-35],[170,-38],[168,-42],[166,-47]]],land);
+  // Antarctica
+  tctx.fillStyle=snow;
+  tctx.fillRect(0,TEX_H*0.85,TEX_W,TEX_H*0.15);
+  // Arctic
+  tctx.fillStyle=snow;
+  tctx.fillRect(0,0,TEX_W,TEX_H*0.06);
+
+  // Lat/lon grid lines on texture
+  tctx.strokeStyle='rgba(0,200,255,0.12)';tctx.lineWidth=1;
+  for(let lat2=-80;lat2<=80;lat2+=20){
+    const y2=((90-lat2)/180)*TEX_H;
+    tctx.beginPath();tctx.moveTo(0,y2);tctx.lineTo(TEX_W,y2);tctx.stroke();
+  }
+  for(let lon2=-180;lon2<=180;lon2+=20){
+    const x2=((lon2+180)/360)*TEX_W;
+    tctx.beginPath();tctx.moveTo(x2,0);tctx.lineTo(x2,TEX_H);tctx.stroke();
+  }
+
+  // Cloud layer
+  tctx.fillStyle='rgba(255,255,255,0.06)';
+  for(let i=0;i<120;i++){
+    const cx2=Math.random()*TEX_W,cy2=Math.random()*TEX_H;
+    const r2=20+Math.random()*80;
+    tctx.beginPath();tctx.ellipse(cx2,cy2,r2,r2*0.4,Math.random()*Math.PI,0,Math.PI*2);tctx.fill();
+  }
+
+  const earthTex=new THREE.CanvasTexture(tc);
+
+  const geo=new THREE.SphereGeometry(1,64,64);
+  const solidMat=new THREE.MeshPhongMaterial({map:earthTex,specular:new THREE.Color(0x002244),shininess:18,bumpScale:0.02});
+  const solid=new THREE.Mesh(geo,solidMat);glGlobeGroup.add(solid);
+
+  // Thin wireframe over texture
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00f5ff,wireframe:true,transparent:true,opacity:0.06});
+  glGlobeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.002,32,32),wireMat));
+  glGlobe=glGlobeGroup;
+
+  // Country dots — bigger and more visible
+  const majorCountries=['india','usa','china','russia','brazil','australia','japan','uk','france','germany'];
+  Object.entries(COUNTRIES).forEach(([name,[lat,lon]])=>{
+    const v=latLonToVec3(lat,lon,1.018);
+    const isMajor=majorCountries.includes(name);
+    const dotColor=name==='india'?0xff8800:name==='usa'?0x4488ff:0xff3333;
+    const dotSize=isMajor?0.022:0.014;
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(dotSize,8,8),new THREE.MeshBasicMaterial({color:dotColor}));
+    dot.position.copy(v);
+    // Glow ring — bigger for major countries
+    const ring=new THREE.Mesh(new THREE.RingGeometry(dotSize*1.4,dotSize*2.2,12),new THREE.MeshBasicMaterial({color:dotColor,transparent:true,opacity:0.7,side:THREE.DoubleSide}));
+    ring.position.copy(v);ring.lookAt(new THREE.Vector3(0,0,0));
+    // Outer glow for major countries
+    if(isMajor){
+      const outerRing=new THREE.Mesh(new THREE.RingGeometry(dotSize*2.5,dotSize*4,16),new THREE.MeshBasicMaterial({color:dotColor,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
+      outerRing.position.copy(v);outerRing.lookAt(new THREE.Vector3(0,0,0));
+      glGlobeGroup.add(outerRing);
+    }
+    glGlobeGroup.add(dot);glGlobeGroup.add(ring);
+  });
+
+  // Atmosphere glow
+  const atmMat=new THREE.MeshBasicMaterial({color:0x0055ff,transparent:true,opacity:0.09,side:THREE.BackSide});
+  glScene.add(new THREE.Mesh(new THREE.SphereGeometry(1.12,32,32),atmMat));
+  // Atmosphere inner glow
+  const atmMat2=new THREE.MeshBasicMaterial({color:0x003399,transparent:true,opacity:0.04,side:THREE.BackSide});
+  glScene.add(new THREE.Mesh(new THREE.SphereGeometry(1.05,32,32),atmMat2));
+
+  // Stars
+  const sv=[];for(let i=0;i<4000;i++)sv.push((Math.random()-.5)*400,(Math.random()-.5)*400,(Math.random()-.5)*400);
+  const sg2=new THREE.BufferGeometry();sg2.setAttribute('position',new THREE.Float32BufferAttribute(sv,3));
+  glStars=new THREE.Points(sg2,new THREE.PointsMaterial({color:0xffffff,size:0.18,transparent:true,opacity:0.6}));
+  glScene.add(glStars);
+
+  // Lights
+  glScene.add(new THREE.AmbientLight(0x334466,1.5));
+  const dl=new THREE.DirectionalLight(0xaaccff,2.2);dl.position.set(5,3,5);glScene.add(dl);
+  const dl2=new THREE.DirectionalLight(0x001133,0.8);dl2.position.set(-5,-3,-5);glScene.add(dl2);
+
+  // Smooth zoom display
+  let displayZoom=1.0;
+
+  const render=()=>{
+    requestAnimationFrame(render);
+    if(!glIsExploded&&!glIsHeld)glGlobeGroup.rotation.y+=glAutoSpin;
+    displayZoom+=(glTargetZoom-displayZoom)*0.07;
+    glCamera.position.z=3/displayZoom;
+    glStars.rotation.y+=0.00008;
+    glRenderer.render(glScene,glCamera);
+  };render();
+
+  // ═══ VOICE ENGINE ═══
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+    const sr=new SR();
+    sr.continuous=true; sr.interimResults=true; sr.lang='en-IN'; // Indian English accent better
+
+    // ── Fuzzy country finder ──
+    // Build a flat lookup: every alias + every key → key
+    const CLOOKUP={};
+    Object.keys(COUNTRIES).forEach(k=>CLOOKUP[k]=k);
+    Object.entries(COUNTRY_ALIASES).forEach(([alias,key])=>CLOOKUP[alias]=key);
+
+    function findCountry(raw){
+      // strip noise words then try progressively looser matches
+      const clean=raw
+        .replace(/jarvis/g,'')
+        .replace(/\b(how many|people|live|there|what|language|speak|currency|money|capital|city|area|size|big|large|continent|located|where|is|are|in|of|for|the|a|an|do|does|tell me|about|show|fly|go|take me|navigate)\b/g,' ')
+        .replace(/[^a-z\s]/g,'').replace(/\s+/g,' ').trim();
+
+      // 1. exact match on cleaned string (no spaces)
+      const nosp=clean.replace(/\s/g,'');
+      if(CLOOKUP[nosp])return CLOOKUP[nosp];
+
+      // 2. exact phrase match in lookup table
+      if(CLOOKUP[clean])return CLOOKUP[clean];
+
+      // 3. check if full clean string appears inside any lookup key
+      const keys=Object.keys(CLOOKUP);
+      let found=keys.find(k=>k===clean);
+      if(found)return CLOOKUP[found];
+
+      // 4. any lookup key appears as substring in clean string
+      found=keys.find(k=>k.length>3&&clean.includes(k));
+      if(found)return CLOOKUP[found];
+
+      // 5. clean string appears as substring of lookup key
+      found=keys.find(k=>k.length>3&&k.includes(clean));
+      if(found)return CLOOKUP[found];
+
+      // 6. word-by-word: any word in clean that matches start of a country key
+      const words=clean.split(' ').filter(w=>w.length>3);
+      for(const w of words){
+        found=keys.find(k=>k.startsWith(w)||w.startsWith(k.substring(0,5)));
+        if(found)return CLOOKUP[found];
+      }
+      return null;
+    }
+
+    // ── Casual chat replies ──
+    function casualReply(txt){
+      const t=txt.replace(/jarvis/g,'').trim();
+      if(/\b(hi|hello|hey|sup|wassup|yo|hiya)\b/.test(t))
+        return['Hey! What\'s up? Ask me anything about countries or say a country name to fly there!','👋 HEY!'];
+      if(/\b(how are you|you okay|you good|how you doing|how r u)\b/.test(t))
+        return['I\'m doing great, fully operational and ready to go! What do you need?','😄 DOING GREAT!'];
+      if(/\b(who are you|what are you|who r u)\b/.test(t))
+        return['I\'m JARVIS — your AI globe assistant. I know every country on Earth. Try asking me anything!','🤖 I\'M JARVIS'];
+      if(/\b(thank|thanks|thx|ty|thank you)\b/.test(t))
+        return['Anytime! That\'s what I\'m here for.','🙏 ANYTIME!'];
+      if(/\b(cool|awesome|nice|wow|amazing|sick|fire|lit)\b/.test(t))
+        return['Glad you think so! Ask me more stuff, I love showing off.','🔥 LET\'S GO!'];
+      if(/\b(bored|boring)\b/.test(t))
+        return['Bored? Say a country name and I\'ll blow your mind with facts!','😴 ASK ME SOMETHING!'];
+      if(/\b(what can you do|what do you know|help)\b/.test(t))
+        return['I can fly to any country, tell you population, capital, currency, language, area — anything! Just say Jarvis then ask away.','💡 ASK ME ANYTHING!'];
+      if(/\b(your favourite|your favorite|best country)\b/.test(t))
+        return['Honestly? India. Birthplace of chess, yoga, and zero. Pretty hard to beat that.','🇮🇳 INDIA — MY FAV'];
+      if(/\b(biggest country|largest country)\b/.test(t))
+        return['Russia! 17 million square kilometers. It spans 11 time zones. Absolutely massive.','🇷🇺 RUSSIA IS BIGGEST'];
+      if(/\b(smallest country)\b/.test(t))
+        return['Vatican City. Just 0.44 square kilometers inside Rome. Tiny but mighty.','⛪ VATICAN = SMALLEST'];
+      if(/\b(most populated|most people|biggest population)\b/.test(t))
+        return['India just overtook China! India now has about 1.44 billion people.','🇮🇳 INDIA = MOST PEOPLE'];
+      if(/\b(richest country|wealthiest)\b/.test(t))
+        return['Luxembourg has the highest GDP per capita — about 135,000 dollars per person!','💰 LUXEMBOURG = RICHEST'];
+      if(/\b(oldest country|ancient)\b/.test(t))
+        return['San Marino claims to be the world\'s oldest republic, founded in 301 AD. Iran and Egypt are among the oldest civilizations.','🏛️ SAN MARINO = OLDEST'];
+      if(/\b(india|bharat)\b/.test(t)&&/\b(cool|amazing|great|best|awesome)\b/.test(t))
+        return['India is incredible! 1.4 billion people, 22 official languages, birthplace of cricket obsession and Bollywood. Proud!','🇮🇳 INDIA IS AMAZING!'];
+      if(/\b(joke|funny|make me laugh)\b/.test(t))
+        return['Why does Norway put barcodes on their navy ships? So they can Scandinavian. Ha! Okay that was bad.','😂 BAD JOKE ALERT'];
+      if(/\b(what time|current time)\b/.test(t))
+        return[`It's ${new Date().toLocaleTimeString()}. Time flies when you\'re exploring the globe!`,`🕐 ${new Date().toLocaleTimeString()}`];
+      if(/\b(weather|temperature)\b/.test(t))
+        return['I can\'t check live weather, but I can tell you everything about any country\'s climate! Just ask.','⛅ ASK ABOUT A COUNTRY'];
+      return null;
+    }
+
+    // ── Answer specific country questions (deep knowledge) ──
+    function answerQ(txt,key){
+      const d=EDU_DATA[key];
+      const n=key==='usa'?'USA':key==='uk'?'UK':key==='uae'?'UAE':key==='drc'?'DR Congo':(key.charAt(0).toUpperCase()+key.slice(1));
+      // Population
+      if(/\b(population|how many people|how many live|people live|how many person|citizens|inhabitants)\b/.test(txt))
+        return[`${n} has a population of ${d.pop}.`,`👥 ${n}: ${d.pop}`];
+      // Language
+      if(/\b(language|speak|spoken|official language|what language|tongue)\b/.test(txt))
+        return[`In ${n}, people speak ${d.lang}.`,`🗣️ ${n}: ${d.lang}`];
+      // Currency / money
+      if(/\b(currency|money|cash|pay|rupee|dollar|euro|pound|what money|coin|note)\b/.test(txt))
+        return[`${n} uses the ${d.currency}.`,`💰 ${n}: ${d.currency}`];
+      // Capital
+      if(/\b(capital|main city|capital city|biggest city|seat of government)\b/.test(txt))
+        return[`The capital of ${n} is ${d.capital}.`,`📍 CAPITAL: ${d.capital}`];
+      // Size / area
+      if(/\b(size|area|how big|how large|square|kilometer|km|extent)\b/.test(txt))
+        return[`${n} covers ${d.area}.`,`📐 ${n}: ${d.area}`];
+      // Continent / location
+      if(/\b(continent|located|where is|which part|region|geography)\b/.test(txt))
+        return[`${n} is in ${d.continent}, with the capital at ${d.capital}.`,`🌍 ${n} → ${d.continent}`];
+      // PM
+      if(/\b(prime minister|pm|premier|head of government|who governs|who leads the government)\b/.test(txt))
+        return d.pm?[`The Prime Minister of ${n} is ${d.pm}.`,`🏛️ PM: ${d.pm}`]
+          :[`${n} doesn't have a Prime Minister — it's a ${d.govt||'republic'}.`,`🏛️ GOVT: ${d.govt}`];
+      // President / King / ruler
+      if(/\b(president|king|queen|ruler|monarch|head of state|who rules|leader|chancellor)\b/.test(txt))
+        return d.president?[`The head of state of ${n} is ${d.president}.`,`👑 HEAD OF STATE: ${d.president}`]
+          :[`${n}'s government is: ${d.govt}.`,`🏛️ GOVT: ${d.govt}`];
+      // Government / political system
+      if(/\b(government|political|politics|system|democracy|republic|constitution|ruling party)\b/.test(txt))
+        return d.govt?[`${n} is a ${d.govt}.`,`🏛️ GOVT: ${d.govt}`]
+          :[`${n} has a ${d.continent}-style government.`,`🏛️ ${n}`];
+      // GDP / economy
+      if(/\b(gdp|economy|economic|rich|wealth|income|gross domestic|financial strength|how rich|money worth)\b/.test(txt))
+        return d.gdp?[`${n}'s GDP is ${d.gdp}.`,`💹 GDP: ${d.gdp}`]
+          :[`${n} has a growing economy with a population of ${d.pop}.`,`💹 ${n}`];
+      // Religion
+      if(/\b(religion|religious|faith|believe|god|muslim|christian|hindu|buddhist|church|mosque|temple|worship)\b/.test(txt))
+        return d.religion?[`In ${n}, the main religions are: ${d.religion}.`,`🙏 RELIGION: ${d.religion}`]
+          :[`${n} has diverse religious beliefs.`,`🙏 ${n}`];
+      // National animal
+      if(/\b(national animal|animal symbol|state animal|what animal)\b/.test(txt))
+        return d.natAnimal?[`${n}'s national animal is the ${d.natAnimal}.`,`🐾 NAT. ANIMAL: ${d.natAnimal}`]
+          :[`I don't have the national animal for ${n}.`,`🐾 ${n}`];
+      // National bird
+      if(/\b(national bird|state bird|bird symbol)\b/.test(txt))
+        return d.natBird?[`${n}'s national bird is the ${d.natBird}.`,`🐦 NAT. BIRD: ${d.natBird}`]
+          :[`I don't have the national bird for ${n}.`,`🐦 ${n}`];
+      // National flower
+      if(/\b(national flower|state flower|flower symbol)\b/.test(txt))
+        return d.natFlower?[`${n}'s national flower is the ${d.natFlower}.`,`🌸 NAT. FLOWER: ${d.natFlower}`]
+          :[`I don't have the national flower for ${n}.`,`🌸 ${n}`];
+      // National sport
+      if(/\b(national sport|state sport|favourite sport|popular sport|sport)\b/.test(txt))
+        return d.natSport?[`${n}'s national sport is ${d.natSport}.`,`⚽ NATIONAL SPORT: ${d.natSport}`]
+          :[`${n} is passionate about sport! Population: ${d.pop}.`,`⚽ ${n}`];
+      // National tree
+      if(/\b(national tree|state tree|tree symbol)\b/.test(txt))
+        return d.natTree?[`${n}'s national tree is the ${d.natTree}.`,`🌳 NAT. TREE: ${d.natTree}`]
+          :[`I don't have the national tree for ${n}.`,`🌳 ${n}`];
+      // National anthem
+      if(/\b(national anthem|anthem|song|hymn)\b/.test(txt))
+        return d.anthem?[`${n}'s national anthem is "${d.anthem}".`,`🎵 ANTHEM: ${d.anthem}`]
+          :[`I don't have the anthem details for ${n}.`,`🎵 ${n}`];
+      // Independence
+      if(/\b(independence|independent|founded|freedom|liberated|when did|history)\b/.test(txt))
+        return d.independence?[`${n} gained independence on ${d.independence}.`,`🗓️ INDEPENDENCE: ${d.independence}`]
+          :[`${n} has a rich history in ${d.continent}.`,`🗓️ ${n}`];
+      // Famous people
+      if(/\b(famous|celebrity|well known|notable|prominent|icon|legend|who is famous|celebrities|known people|great people)\b/.test(txt))
+        return d.famous?[`Famous people from ${n} include: ${d.famous}.`,`⭐ FAMOUS FROM ${n.toUpperCase()}: ${d.famous}`]
+          :[`${n} has produced many great people! Capital: ${d.capital}.`,`⭐ ${n}`];
+      // Timezone
+      if(/\b(time zone|timezone|time difference|what time|gmt|utc)\b/.test(txt))
+        return d.timezone?[`${n} is in the ${d.timezone} timezone.`,`🕐 TIMEZONE: ${d.timezone}`]
+          :[`I don't have timezone details for ${n}.`,`🕐 ${n}`];
+      // Calling code
+      if(/\b(calling code|phone code|country code|dial|dialing code)\b/.test(txt))
+        return d.callingCode?[`${n}'s international calling code is ${d.callingCode}.`,`📞 CALLING CODE: ${d.callingCode}`]
+          :[`I don't have the calling code for ${n}.`,`📞 ${n}`];
+      // Internet / domain
+      if(/\b(internet|domain|website|extension|tld|web address)\b/.test(txt))
+        return d.internet?[`${n}'s internet domain extension is ${d.internet}.`,`🌐 DOMAIN: ${d.internet}`]
+          :[`I don't have the domain info for ${n}.`,`🌐 ${n}`];
+      // Olympics
+      if(/\b(olympic|olympics|games|medals|sport achievement)\b/.test(txt))
+        return d.olympics?[`${n} at the Olympics: ${d.olympics}.`,`🏅 OLYMPICS: ${d.olympics}`]
+          :[`${n} participates in the Olympics! Capital: ${d.capital}.`,`🏅 ${n}`];
+      // Food
+      if(/\b(food|cuisine|eat|dish|meal|famous food|traditional food|delicacy)\b/.test(txt))
+        return d.food?[`Famous foods from ${n}: ${d.food}.`,`🍽️ FOOD: ${d.food}`]
+          :[`${n} has a delicious cuisine! Try visiting ${d.capital}.`,`🍽️ ${n}`];
+      // Landmarks
+      if(/\b(landmark|famous place|tourist|attraction|monument|visit|sight|wonder)\b/.test(txt))
+        return d.landmark?[`Famous landmarks in ${n}: ${d.landmark}.`,`🗺️ LANDMARKS: ${d.landmark}`]
+          :[`${n} has many great places to visit! Capital: ${d.capital}.`,`🗺️ ${n}`];
+      // Fun fact / general about
+      if(/\b(fun fact|cool fact|interesting|did you know|tell me|about|what is|describe)\b/.test(txt))
+        return[`Here's a cool fact about ${n}: ${d.fact}`,`📖 ${n.toUpperCase()}`];
+      // Neighbours / borders
+      if(/\b(neighbor|border|next to|near|close to|adjacent|surround)\b/.test(txt))
+        return[`${n} is in ${d.continent}. I don't have detailed border data, but say a nearby country name and I'll fly there!`,`🗺️ ${n} — ${d.continent}`];
+      // Full summary default
+      return[`${n}: Capital ${d.capital}, Population ${d.pop}, Language ${d.lang}, Currency ${d.currency}. ${d.fact}`,`📖 ${n.toUpperCase()} — FULL SUMMARY`];
+    }
+
+    // ── Main result handler ──
+    sr.onresult=e=>{
+      let interim='',final='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript.toLowerCase().trim();
+        if(e.results[i].isFinal)final+=t+' ';
+        else interim+=t;
+      }
+      // Show LIVE text immediately while still talking
+      const live=(interim||final).trim();
+      if(live){
+        const el=document.getElementById('gl-vfb');
+        el.textContent='🎙 '+(live.length>60?live.slice(-60):live).toUpperCase();
+        el.style.display='block';
+        clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',5000);
+      }
+      if(!final.trim())return;
+      const txt=final.trim();
+      if(!txt.includes('jarvis'))return;
+
+      // ── Globe controls (instant) ──
+      if(/\b(explode|blow up|destroy|detonate)\b/.test(txt)){explodeGlobe();jarvisSpeak('Boom! Fragmentation sequence initiated!','💥 BOOM!');return;}
+      if(/\b(rearrange|reassemble|rebuild|put back|restore)\b/.test(txt)){rearrangeGlobe();jarvisSpeak('Putting it back together!','🔄 REASSEMBLING');return;}
+      if(/\b(hold|freeze|stop|pause|lock)\b/.test(txt)){glIsHeld=true;glAutoSpin=0;jarvisSpeak('Globe locked!','🔒 LOCKED');return;}
+      if(/\b(spin|rotate|release|resume|go)\b/.test(txt)&&!txt.includes('stop')){glIsHeld=false;glAutoSpin=0.003;jarvisSpeak('Spinning!','▶ SPINNING');return;}
+      if(/\bZoom in\b/i.test(txt)||txt.includes('zoom in')){glTargetZoom=Math.min(8,glTargetZoom+1.5);jarvisSpeak('Zooming in!','🔍 ZOOM IN');return;}
+      if(/\bzoom out\b/i.test(txt)||txt.includes('zoom out')){glTargetZoom=Math.max(0.3,glTargetZoom-1.5);jarvisSpeak('Zooming out!','🔍 ZOOM OUT');return;}
+      if(/\b(reset|default|normal)\b/.test(txt)){glTargetZoom=1;glAutoSpin=0.003;glIsHeld=false;jarvisSpeak('Reset! Back to normal.','↺ RESET');return;}
+
+      // ── Casual chat ──
+      const casual=casualReply(txt);
+      if(casual){jarvisSpeak(casual[0],casual[1]);return;}
+
+      // ── Country Q&A ──
+      const found=findCountry(txt);
+      if(found){
+        const isQ=/\b(how|what|where|tell|speak|language|population|currency|area|about|fact|size|capital|continent|neighbor|president|religion|money|big|large)\b/.test(txt);
+        if(isQ){
+          const ans=answerQ(txt,found);
+          jarvisSpeak(ans[0],ans[1]);
+          showEdu(found);
+        } else {
+          // Just fly there
+          flyToCountry(found);
+          const d=EDU_DATA[found];
+          const n=found==='usa'?'USA':found==='uk'?'UK':found==='uae'?'UAE':(found.charAt(0).toUpperCase()+found.slice(1));
+          setTimeout(()=>jarvisSpeak(`Flying to ${n}! Capital is ${d.capital}, population ${d.pop}.`,`🚀 FLYING TO ${n.toUpperCase()}`),400);
+        }
+      } else {
+        // Last resort — maybe they just said something after "Jarvis"
+        const after=txt.replace(/jarvis/g,'').trim();
+        if(after.length>2){
+          logUnknown(after);
+          jarvisSpeak(`I'm really sorry, I don't know the answer to that yet! I've logged it though.`,`😔 LOGGED: "${after.substring(0,40)}"`);
+        }
+      }
+    };
+
+    sr.onerror=e=>{if(e.error!=='no-speech')try{sr.start()}catch(_){}};
+    sr.onend=()=>{try{sr.start()}catch(_){}};
+    try{sr.start()}catch(_){}
+
+    setTimeout(()=>jarvisSpeak(
+      'Hey! JARVIS online. Say my name and ask anything — country facts, or just chat with me!',
+      '🤖 JARVIS ONLINE — SAY ANYTHING!'
+    ),1500);
+  }
+
+  await getCam(glHandVid);
+
+  const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+  hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.75,minTrackingConfidence:0.7});
+
+  let palmSpinActive=false;
+  let lastPalmX=null;
+  // Pinch zoom: accumulate delta with heavy smoothing
+  let pinchZoomBuffer=[];
+
+  hands.onResults(res=>{
+    if(currentTab!==2)return;
+    glHandCtx.clearRect(0,0,155,115);
+
+    if(!res.multiHandLandmarks||!res.multiHandLandmarks.length){
+      prevPinchDist=null;lastPalmX=null;fistTimer=null;palmSpinActive=false;pinchZoomBuffer=[];
+      glStat().innerHTML=`GESTURE: NONE<br>ZOOM: ${glTargetZoom.toFixed(1)}×<br>HELD: ${glIsHeld?'YES':'NO'}`;
+      return;
+    }
+    const lm=res.multiHandLandmarks[0];
+
+    // Draw skeleton
+    glHandCtx.strokeStyle='rgba(0,245,255,0.7)';glHandCtx.lineWidth=1.5;
+    [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],
+     [0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]]
+    .forEach(([a,b])=>{
+      glHandCtx.beginPath();
+      glHandCtx.moveTo((1-lm[a].x)*155,lm[a].y*115);
+      glHandCtx.lineTo((1-lm[b].x)*155,lm[b].y*115);
+      glHandCtx.stroke();
+    });
+    glHandCtx.fillStyle='rgba(0,245,255,0.9)';
+    lm.forEach(l=>{glHandCtx.beginPath();glHandCtx.arc((1-l.x)*155,l.y*115,2.5,0,Math.PI*2);glHandCtx.fill()});
+
+    const ext=i=>lm[i].y<lm[i-2].y;
+    const idxExt=ext(8),midExt=ext(12),rngExt=ext(16),pnkExt=ext(20);
+    const fist=!idxExt&&!midExt&&!rngExt&&!pnkExt;
+    const palm=idxExt&&midExt&&rngExt&&pnkExt;
+    const pd=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+    const pinching=pd<0.12;
+
+    let gesture='—';
+
+    if(fist){
+      gesture='FIST';
+      prevPinchDist=null;lastPalmX=null;palmSpinActive=false;pinchZoomBuffer=[];
+      if(!fistTimer)fistTimer=Date.now();
+      else if(Date.now()-fistTimer>2000&&!glIsExploded){explodeGlobe();fistTimer=null}
+    } else if(pinching&&!palm){
+      gesture='PINCH→ZOOM';
+      fistTimer=null;lastPalmX=null;palmSpinActive=false;
+
+      if(prevPinchDist!==null){
+        // Direct delta — each frame of pinch movement = zoom change
+        // Clamp to avoid single-frame spikes
+        const delta=(pd-prevPinchDist);
+        const clampedDelta=Math.max(-0.02,Math.min(0.02,delta));
+        // Scale: positive delta (opening fingers) = zoom in
+        glTargetZoom=Math.max(0.3,Math.min(8.0,glTargetZoom+clampedDelta*18));
+      }
+      prevPinchDist=pd;
+    } else if(palm&&!glIsHeld){
+      gesture='PALM→SPIN';
+      fistTimer=null;prevPinchDist=null;pinchZoomBuffer=[];
+      const rawPalmX=1-lm[9].x;
+      const rawPalmY=lm[9].y;
+      const smoothedX=glSX(rawPalmX);
+      const smoothedY=glSY(rawPalmY);
+      // Left/right: map hand X position to horizontal spin
+      const spinDelta=(smoothedX-0.5)*0.06;
+      glAutoSpin=spinDelta;
+      // Up/down: map hand Y position to vertical tilt
+      // hand at top (y~0.2) = tilt up, hand at bottom (y~0.8) = tilt down
+      const tiltDelta=(smoothedY-0.5)*0.05;
+      glGlobeGroup.rotation.x=Math.max(-1.2,Math.min(1.2,glGlobeGroup.rotation.x+tiltDelta));
+      palmSpinActive=true;
+    } else {
+      fistTimer=null;prevPinchDist=null;pinchZoomBuffer=[];
+      if(palmSpinActive){glAutoSpin=0.002;palmSpinActive=false}
+    }
+
+    glStat().innerHTML=`GESTURE: ${gesture}<br>ZOOM: ${glTargetZoom.toFixed(1)}×<br>HELD: ${glIsHeld?'YES':'NO'}`;
+  });
+
+  const cam=new Camera(glHandVid,{onFrame:async()=>{if(currentTab===2)await hands.send({image:glHandVid})},width:640,height:480});
+  cam.start();
+}
+</script>
+</body>
+</html>
