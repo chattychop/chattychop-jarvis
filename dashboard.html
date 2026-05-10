@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatty Chop Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00f5ff;--green:#00ff88;--yellow:#ffcc00;--red:#ff3366;--bg:#04080f;--panel:rgba(255,255,255,.03);--border:rgba(255,255,255,.08)}
+body{background:var(--bg);color:#fff;font-family:'Inter',sans-serif;min-height:100vh;padding:2rem 1.5rem}
+
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1.2rem;z-index:999}
+.logo{font-family:'Orbitron',monospace;font-size:1.4rem;color:var(--cyan);letter-spacing:.3em;text-shadow:0 0 30px rgba(0,245,255,.3)}
+.logo-sub{color:rgba(255,255,255,.25);font-size:.6rem;letter-spacing:.4em;margin-top:.2rem}
+#pinInput{background:rgba(0,245,255,.06);border:1px solid rgba(0,245,255,.2);color:#fff;font-family:'Orbitron',monospace;font-size:1.8rem;padding:.6rem 1.2rem;text-align:center;letter-spacing:.6em;width:180px;outline:none;border-radius:4px}
+#pinInput:focus{border-color:var(--cyan)}
+#loginBtn{background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);color:var(--cyan);font-family:'Orbitron',monospace;padding:.6rem 2rem;cursor:pointer;font-size:.65rem;letter-spacing:.2em;border-radius:4px}
+#loginBtn:hover{background:rgba(0,245,255,.2)}
+.err{color:var(--red);font-size:.65rem;font-family:'Orbitron',monospace}
+
+#app{display:none;max-width:1100px;margin:0 auto}
+.header{text-align:center;margin-bottom:2rem}
+.header h1{font-family:'Orbitron',monospace;font-size:1.2rem;color:var(--cyan);letter-spacing:.2em}
+.header p{color:rgba(255,255,255,.25);font-size:.58rem;letter-spacing:.25em;margin-top:.4rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;font-size:.58rem;color:rgba(255,255,255,.3);flex-wrap:wrap;gap:.5rem}
+.live-badge{display:flex;align-items:center;gap:.4rem;color:var(--green);font-size:.6rem}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:glow .9s infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.5)}50%{box-shadow:0 0 0 5px rgba(0,255,136,0)}}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1rem;text-align:center}
+.stat-num{font-family:'Orbitron',monospace;font-size:2rem;font-weight:700;line-height:1;margin-bottom:.4rem}
+.stat-lbl{font-size:.5rem;color:rgba(255,255,255,.3);letter-spacing:.2em}
+.stat-sub{font-size:.55rem;color:rgba(255,255,255,.2);margin-top:.3rem}
+
+.section{font-family:'Orbitron',monospace;font-size:.52rem;letter-spacing:.3em;color:rgba(255,255,255,.22);margin:2rem 0 1rem;display:flex;align-items:center;gap:1rem}
+.section::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.panel-title{font-size:.52rem;color:rgba(255,255,255,.22);letter-spacing:.2em;margin-bottom:1rem;font-family:'Orbitron',monospace}
+
+
+.visitor{display:flex;gap:1rem;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.visitor:last-child{border-bottom:none}
+.v-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:.3rem}
+.v-dot.new{background:var(--green);box-shadow:0 0 8px var(--green)}
+.v-dot.old{background:rgba(255,255,255,.12)}
+.v-dot.live{background:var(--green);animation:glow .8s infinite}
+.v-loc{font-size:.78rem;font-weight:500;color:#fff;margin-bottom:.2rem}
+.v-meta{font-size:.6rem;color:rgba(255,255,255,.35);margin-bottom:.3rem}
+.v-tabs{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.3rem}
+.tab-badge{font-size:.52rem;padding:.18rem .55rem;border-radius:20px;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.2);color:var(--cyan)}
+.tab-none{font-size:.52rem;color:rgba(255,255,255,.15);font-style:italic}
+.v-source{display:inline-block;font-size:.52rem;padding:.15rem .5rem;border-radius:20px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.18);color:var(--green);margin-right:.4rem}
+.v-time{font-size:.55rem;color:rgba(255,255,255,.22)}
+.v-spent{color:rgba(0,245,255,.5)}
+
+.qcard{padding:.8rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.qcard:last-child{border-bottom:none}
+.q-text{font-size:.72rem;color:var(--yellow);margin-bottom:.25rem}
+.q-meta{font-size:.53rem;color:rgba(255,255,255,.25)}
+
+.loc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.8rem;margin-bottom:1rem}
+.loc-card{background:rgba(255,204,0,.04);border:1px solid rgba(255,204,0,.1);border-radius:10px;padding:.9rem}
+.loc-name{font-size:.75rem;font-weight:500;color:#fff;margin-bottom:.2rem}
+.loc-city{font-size:.58rem;color:rgba(255,255,255,.3);margin-bottom:.5rem}
+.loc-meta{font-size:.53rem;color:rgba(255,255,255,.22);display:flex;gap:1rem}
+.loc-meta b{color:var(--yellow)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.bar-row{display:flex;align-items:center;gap:.7rem;margin-bottom:.45rem}
+.bar-lbl{width:90px;font-size:.56rem;color:rgba(255,255,255,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;background:rgba(255,255,255,.04);height:4px;border-radius:2px}
+.bar-fill{height:100%;border-radius:2px;background:var(--cyan);opacity:.6}
+.bar-count{font-size:.53rem;color:rgba(255,255,255,.3);width:22px;text-align:right}
+
+.tab-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.tab-row:last-child{border-bottom:none}
+.tab-name{font-size:.68rem;color:var(--cyan)}
+.tab-count{font-family:'Orbitron',monospace;font-size:.75rem;color:#fff}
+
+.scroll{max-height:360px;overflow-y:auto}
+.scroll::-webkit-scrollbar{width:3px}
+.scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+.empty{color:rgba(255,255,255,.18);font-size:.62rem;padding:1rem;text-align:center;font-style:italic}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div><div class="logo">CHATTY CHOP</div><div class="logo-sub">DASHBOARD ACCESS</div></div>
+  <input id="pinInput" type="password" placeholder="••••" maxlength="4" autofocus>
+  <button id="loginBtn" onclick="checkPin()">ENTER →</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <h1>⚡ CHATTY CHOP DASHBOARD</h1>
+    <p>LIVE VISITOR ANALYTICS · AUTO REFRESH 30s</p>
+  </div>
+
+  <div class="topbar">
+    <span id="liveStatus" class="live-badge"><span class="dot"></span> checking...</span>
+    <span id="updTime">—</span>
+    <span id="totalRows">—</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" style="color:var(--cyan)" id="sTotal">—</div><div class="stat-lbl">TOTAL VISITS</div><div class="stat-sub" id="sToday">— today</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--green)" id="sCountries">—</div><div class="stat-lbl">COUNTRIES</div><div class="stat-sub" id="sTopC">—</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--yellow)" id="sAvg">—</div><div class="stat-lbl">AVG SECONDS</div><div class="stat-sub">per session</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)" id="sQuestions">—</div><div class="stat-lbl">UNKNOWN Q's</div><div class="stat-sub">jarvis couldn't answer</div></div>
+  </div>
+
+  <div class="section">🌍 ALL LOCATIONS</div>
+  <div class="loc-grid" id="locGrid"><div class="empty">Loading...</div></div>
+
+  <div class="section">⚡ RECENT VISITORS</div>
+  <div class="panel">
+    <div class="scroll" id="timeline"><div class="empty">Loading...</div></div>
+  </div>
+
+  <div class="section">🎮 TABS BREAKDOWN</div>
+  <div class="grid2">
+    <div class="panel"><div class="panel-title">TABS USED</div><div id="tabBreakdown"><div class="empty">—</div></div></div>
+    <div class="panel"><div class="panel-title">SOURCES</div><div id="bSources"><div class="empty">—</div></div></div>
+  </div>
+
+  <div class="section">❓ UNKNOWN QUESTIONS</div>
+  <div class="panel"><div class="scroll" id="qtl"><div class="empty">Loading...</div></div></div>
+
+  <div class="section">📊 BREAKDOWN</div>
+  <div class="grid2">
+    <div class="panel"><div class="panel-title">DEVICES</div><div id="bDevices"></div></div>
+    <div class="panel"><div class="panel-title">BROWSERS</div><div id="bBrowsers"></div></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID='1AmXlYcwPXhwr_IDrMdI4IiQ7Yv3I4aHHQi00rkVYMKA';
+const PIN='2005';
+let allVisits=[];
+
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
+
+function checkPin(){
+  if(document.getElementById('pinInput').value===PIN){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadData();
+    setInterval(loadData,30000);
+  } else {
+    document.getElementById('loginErr').textContent='Wrong PIN!';
+  }
+}
+
+function parseCSV(text){
+  return text.trim().split('\n').map(row=>{
+    const cols=[]; let cur='',inQ=false;
+    for(const c of row){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur);cur='';}else cur+=c;}
+    cols.push(cur);
+    return cols.map(c=>c.trim().replace(/^"|"$/g,''));
+  });
+}
+
+function cnt(data,field){
+  const c={};
+  data.forEach(r=>{const v=r[field]||'Unknown';c[v]=(c[v]||0)+1;});
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]);
+}
+
+function bar(id,data){
+  const el=document.getElementById(id);
+  if(!data.length){el.innerHTML='<div class="empty">No data</div>';return;}
+  const max=data[0][1];
+  el.innerHTML=data.slice(0,6).map(([l,c])=>`<div class="bar-row"><div class="bar-lbl">${l}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/max*100)}%"></div></div><div class="bar-count">${c}</div></div>`).join('');
+}
+
+function parseDate(str){
+  if(!str) return null;
+  // Already a clean ISO string like 2026-05-10T07:41:05.366Z
+  let d = new Date(str);
+  if(!isNaN(d)) return d;
+  // Google Sheets sometimes gives: 5/10/2026 13:41:05 (M/D/YYYY H:mm:ss)
+  const m = str.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)/);
+  if(m) return new Date(+m[3], +m[1]-1, +m[2], +m[4], +m[5]);
+  return null;
+}
+
+function fmtDate(str){
+  const d = parseDate(str);
+  if(!d) return '—';
+  return d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'});
+}
+
+function fmtDateShort(str){
+  const d = parseDate(str);
+  if(!d) return '—';
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
+}
+
+function visitorCard(r,i){
+  const tabs=(r.tabsused||'').split(',').map(t=>t.trim()).filter(Boolean);
+  const tabsHtml=tabs.length?tabs.map(t=>`<span class="tab-badge">${t}</span>`).join(''):`<span class="tab-none">no tab data</span>`;
+  const timeStr=fmtDate(r.time);
+  const isLive=r.status==='active';
+  return `<div class="visitor">
+    <div class="v-dot ${isLive?'live':i===0?'new':'old'}"></div>
+    <div style="flex:1">
+      <div class="v-loc">${r.country||'Unknown'}${r.city&&r.city!=='Unknown'?' / '+r.city:''} ${isLive?'<span style="color:var(--green);font-size:.5rem">● LIVE</span>':''}</div>
+      <div class="v-meta"><span class="v-source">${r.source||'Direct'}</span>${r.device||'—'} · ${r.browser||'—'}</div>
+      <div class="v-tabs">${tabsHtml}</div>
+      <div class="v-time">${timeStr} · <span class="v-spent">${parseInt(r.timespent||0)>0?r.timespent+'s on site':'just arrived'}</span></div>
+    </div>
+  </div>`;
+}
+
+async function loadData(){
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&t=${Date.now()}`;
+    const res=await fetch(url);
+    const text=await res.text();
+    const rows=parseCSV(text);
+    if(rows.length<2)return;
+
+    const headers=rows[0].map(h=>h.toLowerCase().replace(/[^a-z]/g,''));
+    const data=rows.slice(1).map(r=>{
+      const obj={};
+      headers.forEach((h,i)=>obj[h]=(r[i]||''));
+      return obj;
+    }).filter(r=>r.time||r.country);
+
+    const visits=data.filter(r=>r.type!=='unknown');
+    const questions=data.filter(r=>r.type==='unknown'||(r.question&&r.question.length>0));
+    allVisits=visits;
+
+    // Live users — only status=active
+    const liveUsers=visits.filter(r=>r.status==='active');
+    const liveEl=document.getElementById('liveStatus');
+    if(liveUsers.length){
+      liveEl.innerHTML=`<span class="dot"></span> <span>${liveUsers.length} online now</span>`;
+      liveEl.style.color='var(--green)';
+    } else {
+      liveEl.innerHTML='⚫ no one online';
+      liveEl.style.color='rgba(255,255,255,.25)';
+    }
+
+    document.getElementById('updTime').textContent='Updated '+new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+    document.getElementById('totalRows').textContent=visits.length+' unique visits';
+
+    // Stats
+    document.getElementById('sTotal').textContent=visits.length;
+    const todayIST=new Date().toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'});
+    const todayC=visits.filter(r=>{const d=parseDate(r.time);return d?d.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'})===todayIST:false;}).length;
+    document.getElementById('sToday').textContent=`+${todayC} today`;
+    const ctries=new Set(visits.map(r=>r.country).filter(c=>c&&c!=='Unknown'));
+    document.getElementById('sCountries').textContent=ctries.size||'0';
+    const topC=cnt(visits,'country')[0];
+    document.getElementById('sTopC').textContent=topC?topC[0]:'—';
+    const withTime=visits.filter(r=>parseInt(r.timespent)>0);
+    document.getElementById('sAvg').textContent=withTime.length?Math.round(withTime.reduce((s,r)=>s+parseInt(r.timespent||0),0)/withTime.length)+'s':'—';
+    document.getElementById('sQuestions').textContent=questions.length;
+
+    // Locations
+    const locMap={};
+    visits.forEach(r=>{
+      const key=`${r.country||'Unknown'}||${r.city||'Unknown'}`;
+      if(!locMap[key])locMap[key]={country:r.country||'Unknown',city:r.city||'Unknown',first:r.time,last:r.time,count:0};
+      locMap[key].count++;locMap[key].last=r.time;
+    });
+    const locs=Object.values(locMap).sort((a,b)=>b.count-a.count);
+    document.getElementById('locGrid').innerHTML=locs.length?locs.map(l=>`
+      <div class="loc-card">
+        <div class="loc-name">🌍 ${l.country}</div>
+        <div class="loc-city">${l.city!=='Unknown'?l.city:'City unknown'}</div>
+        <div class="loc-meta"><span>Visits <b>${l.count}</b></span><span>First <b>${fmtDateShort(l.first)}</b></span></div>
+      </div>`).join(''):'<div class="empty">No location data yet</div>';
+
+    // Timeline — ALL visitors
+    document.getElementById('timeline').innerHTML=visits.slice().reverse().map((r,i)=>visitorCard(r,i)).join('')||'<div class="empty">No visitors yet</div>';
+
+    // Tabs breakdown
+    const tabCounts={};
+    visits.forEach(r=>{(r.tabsused||'').split(',').map(t=>t.trim()).filter(Boolean).forEach(t=>{tabCounts[t]=(tabCounts[t]||0)+1;});});
+    const tabEntries=Object.entries(tabCounts).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('tabBreakdown').innerHTML=tabEntries.length?tabEntries.map(([t,c])=>`<div class="tab-row"><span class="tab-name">${t}</span><span class="tab-count">${c}</span></div>`).join(''):'<div class="empty">No tab data yet</div>';
+
+    // Questions
+    document.getElementById('qtl').innerHTML=questions.length?questions.slice().reverse().slice(0,20).map((r,i)=>`
+      <div class="qcard">
+        <div class="q-text">❓ ${r.question||'—'}</div>
+        <div class="q-meta">${fmtDate(r.time)} · ${r.country||'Unknown'}${r.city&&r.city!=='Unknown'?' / '+r.city:''} · ${r.device||'—'}</div>
+      </div>`).join(''):'<div class="empty">No unknown questions yet</div>';
+
+    bar('bSources',cnt(visits,'source'));
+    bar('bDevices',cnt(visits,'device'));
+    bar('bBrowsers',cnt(visits,'browser'));
+
+  }catch(e){
+    document.getElementById('updTime').textContent='Error: '+e.message;
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>
