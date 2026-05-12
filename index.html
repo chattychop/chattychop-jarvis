@@ -1827,6 +1827,155 @@ async function initGlobe(){
   });
 })();
 </script>
+<script>
+// ═══ CHATTY CHOP — VISITOR TRACKER ═══
+// ONE row per session. Updates in place. Tracks tabs, time, location precisely.
+(function(){
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvT1ob8l-NTdUFc0Wn2x8GVXQjR_yRQpS7XbuOScJcfXEDK6il_adOfJJMxdvX5sYxNQ/exec';
 
+  const sessionStart = Date.now();
+
+  let sessionId = null;
+  function getCookie(n){ const m=document.cookie.match('(^|;)\\s*'+n+'=([^;]+)'); return m?m[2]:null; }
+  function setCookie(n,v){ document.cookie=n+'='+v+';path=/;max-age=3600'; }
+  try { sessionId = sessionStorage.getItem('_ccsid'); } catch(e){}
+  if(!sessionId) sessionId = getCookie('_ccsid');
+  if(!sessionId){
+    sessionId = Math.random().toString(36).substr(2,9) + Date.now();
+    try { sessionStorage.setItem('_ccsid', sessionId); } catch(e){}
+    setCookie('_ccsid', sessionId);
+  }
+
+  const ua = navigator.userAgent;
+  const device = /mobile/i.test(ua) ? 'Mobile' : /tablet|ipad/i.test(ua) ? 'Tablet' : 'Desktop';
+  const browser = /edg/i.test(ua) ? 'Edge'
+    : /chrome/i.test(ua) ? 'Chrome'
+    : /safari/i.test(ua) ? 'Safari'
+    : /firefox/i.test(ua) ? 'Firefox' : 'Other';
+
+  const ref = document.referrer;
+  let source = 'Direct';
+  if(ref.includes('google')) source = 'Google';
+  else if(ref.includes('youtube')) source = 'YouTube';
+  else if(ref.includes('instagram')) source = 'Instagram';
+  else if(ref.includes('whatsapp')) source = 'WhatsApp';
+  else if(ref.includes('twitter') || ref.includes('x.com')) source = 'Twitter/X';
+  else if(ref.includes('github')) source = 'GitHub';
+  else if(ref) source = ref.split('/')[2] || 'Other';
+
+  const tabsUsed = new Set();
+  const tabNames = ['Air Sketch', 'Face Mesh', '3D Globe'];
+
+  function trackTab(t){
+    const name = tabNames[t];
+    if(name) tabsUsed.add(name);
+  }
+
+  setInterval(()=>{
+    if(typeof currentTab !== 'undefined') trackTab(currentTab);
+  }, 2000);
+
+  function patchFunctions(){
+    if(window.switchTab && !window.switchTab._tracked){
+      const orig = window.switchTab;
+      window.switchTab = function(t){ trackTab(t); return orig.call(this, t); };
+      window.switchTab._tracked = true;
+    }
+    if(window.launch && !window.launch._tracked){
+      const orig = window.launch;
+      window.launch = function(t){ trackTab(t); return orig.call(this, t); };
+      window.launch._tracked = true;
+    }
+  }
+  [0, 500, 1000, 2000, 3000].forEach(ms => setTimeout(patchFunctions, ms));
+
+  let country = 'Unknown', city = 'Unknown', region = 'Unknown';
+
+  function fetchIPLocation(){
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(d => {
+        if(d.country_name) country = d.country_name;
+        if(d.city) city = d.city;
+        if(d.region) region = d.region;
+      })
+      .catch(() =>
+        fetch('https://ip-api.com/json/')
+          .then(r => r.json())
+          .then(d => {
+            if(d.country) country = d.country;
+            if(d.city) city = d.city;
+            if(d.regionName) region = d.regionName;
+          })
+          .catch(() => {})
+      );
+  }
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`)
+          .then(r => r.json())
+          .then(d => {
+            const a = d.address || {};
+            country = a.country || country;
+            city = a.city || a.town || a.village || a.suburb || a.county || city;
+            region = a.state || a.state_district || region;
+          })
+          .catch(() => {});
+        fetchIPLocation();
+      },
+      () => fetchIPLocation(),
+      { timeout: 6000, maximumAge: 600000 }
+    );
+  } else {
+    fetchIPLocation();
+  }
+
+  let lastSentTime = 0;
+
+  function sendData(final){
+    if(!SCRIPT_URL) return;
+    const now = Date.now();
+    if(!final && now - lastSentTime < 15000) return;
+    lastSentTime = now;
+
+    const params = new URLSearchParams({
+      sessionid: sessionId,
+      device,
+      browser,
+      source,
+      country,
+      city,
+      region,
+      tabsused: Array.from(tabsUsed).join(', ') || '',
+      timespent: Math.round((now - sessionStart) / 1000),
+      final: final ? '1' : '0',
+      time: new Date().toISOString()
+    });
+
+    const fullUrl = SCRIPT_URL + '?' + params.toString();
+    if(final && navigator.sendBeacon){
+      navigator.sendBeacon(fullUrl);
+    } else {
+      new Image().src = fullUrl + '&_t=' + now;
+    }
+  }
+
+  setTimeout(() => sendData(false), 1000);
+  setTimeout(() => sendData(false), 10000);
+  setTimeout(() => sendData(false), 30000);
+  setInterval(() => sendData(false), 60000);
+
+  function exitPing(){ sendData(true); }
+  window.addEventListener('beforeunload', exitPing);
+  window.addEventListener('pagehide', exitPing);
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) exitPing();
+  });
+})();
+</script>
 </body>
 </html>
