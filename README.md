@@ -1,3 +1,2 @@
 # chattychop-jarvis
-Air sketch, face mesh, 3D globe you control with your HANDS and voice. Open in Chrome or safari and try it free.
-and also if u want any changes to the ui or want me to fix any bugs just tell what u want to jarvis it will log the issue or anything and i will recieve that and try to make your visit amazing
+ChattyCHOP Jarvis lets you draw in mid-air, map a mesh onto your face, and spin a live 3D globe — all with hand gestures and your voice. Still in beta, with cooler tabs and bigger updates on the way. Spot a bug or want a new feature? Just tell Jarvis — it logs it straight to me and I'll get on it. Made by G. Badrinath — a 15-year-old from India who builds what he wishes existed. Works in Chrome & Safari. Always free.
